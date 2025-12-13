@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: rj_devs_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rj_devs_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rj_devs_password}
+      POSTGRES_DB: ${POSTGRES_DB:-rj_devs_auth}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rj_devs_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rj_devs_network
+
+  auth:
+    build:
+      context: ./backend/auth
+      dockerfile: Dockerfile
+    container_name: rj_devs_auth
+    ports:
+      - "8084:8084"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rj_devs_user}:${POSTGRES_PASSWORD:-rj_devs_password}@postgres:5432/${POSTGRES_DB:-rj_devs_auth}
+      SECRET_KEY: ${SECRET_KEY:-sua-chave-secreta-super-segura-aqui-mude-em-producao}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      EMAIL_FROM: ${EMAIL_FROM:-seu-email@gmail.com}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-sua-senha-app-gmail}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/auth:/app
+    networks:
+      - rj_devs_network
+    command: uvicorn main:app --host 0.0.0.0 --port 8084 --reload
+
+volumes:
+  postgres_data:
+
+networks:
+  rj_devs_network:
+    driver: bridge
