@@ -53,6 +53,7 @@ def create_tables():
         Escola,
         Governo
     )
+    from models.Documentos_model import DocumentoUsuario
     db_engine = get_engine()
     Base.metadata.create_all(bind=db_engine)
 

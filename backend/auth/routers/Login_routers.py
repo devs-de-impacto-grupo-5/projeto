@@ -29,6 +29,7 @@ from models.Conta_model import (
     Escola,
     Governo
 )
+from models.Documentos_model import DocumentoUsuario, DOCUMENTOS_REQUERIDOS
 
 router = APIRouter(tags=["Autenticação"])
 
@@ -248,6 +249,18 @@ async def register(
             )
             db.add(governo)
 
+    # Se for produtor, cria documentos pendentes
+    if data.tipo_usuario == "produtor":
+        documentos_requeridos = DOCUMENTOS_REQUERIDOS.get(data.subtipo_usuario, [])
+        for doc in documentos_requeridos:
+            documento = DocumentoUsuario(
+                user_id=new_user.id,
+                nome_documento=doc["nome"],
+                descricao=doc["descricao"],
+                status="pending"
+            )
+            db.add(documento)
+
     db.commit()
     db.refresh(new_user)
 
@@ -266,6 +279,14 @@ async def register(
             "latitude": new_user.latitude,
             "longitude": new_user.longitude
         }
+
+    # Para produtores, inclui quantidade de documentos pendentes
+    if data.tipo_usuario == "produtor":
+        documentos_pendentes = db.query(DocumentoUsuario).filter(
+            DocumentoUsuario.user_id == new_user.id,
+            DocumentoUsuario.status == "pending"
+        ).count()
+        response["documentos_pendentes"] = documentos_pendentes
 
     return response
 
