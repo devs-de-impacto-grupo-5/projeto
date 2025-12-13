@@ -7,7 +7,9 @@ from schemas.Register_schema import (
     RegisterRequest,
     RegisterFornecedorIndividual,
     RegisterGrupoInformal,
-    RegisterGrupoFormal
+    RegisterGrupoFormal,
+    RegisterEscola,
+    RegisterGoverno
 )
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
@@ -20,7 +22,13 @@ from security.security import (
     verify_password_reset_token
 )
 from models.User_model import User, pwd_context
-from models.Conta_model import FornecedorIndividual, GrupoInformal, GrupoFormal
+from models.Conta_model import (
+    FornecedorIndividual,
+    GrupoInformal,
+    GrupoFormal,
+    Escola,
+    Governo
+)
 
 router = APIRouter(tags=["Autenticação"])
 
@@ -68,12 +76,16 @@ async def register(
     db: Session = Depends(get_db)
 ):
     """
-    Registra um novo usuário e conta de acordo com o tipo especificado.
+    Registra um novo usuário de acordo com o tipo especificado.
 
-    Tipos de conta suportados:
-    - fornecedor_individual: Requer CPF
-    - grupo_informal: Requer lista de CPFs
-    - grupo_formal: Requer CNPJ
+    Tipos de usuário suportados:
+    - produtor:
+        - fornecedor_individual: Requer CPF
+        - grupo_informal: Requer lista de CPFs
+        - grupo_formal: Requer CNPJ
+    - entidade_executora:
+        - escola: Requer nome_escola
+        - governo: Requer nome_orgao e nivel
     """
 
     # Verifica se o email já está cadastrado
@@ -84,108 +96,178 @@ async def register(
             detail="Email já cadastrado"
         )
 
-    # Valida os dados de acordo com o tipo de conta
-    if data.tipo_conta == "fornecedor_individual":
-        if not data.cpf:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="CPF é obrigatório para fornecedor individual"
-            )
-
-        # Verifica se o CPF já está cadastrado
-        existing_cpf = db.query(FornecedorIndividual).filter(
-            FornecedorIndividual.cpf == data.cpf
-        ).first()
-        if existing_cpf:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="CPF já cadastrado"
-            )
-
-    elif data.tipo_conta == "grupo_informal":
-        if not data.cpfs or len(data.cpfs) == 0:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Lista de CPFs é obrigatória para grupo informal"
-            )
-
-        # Verifica se algum CPF já está cadastrado
-        for cpf in data.cpfs:
-            existing_cpf = db.query(GrupoInformal).filter(
-                GrupoInformal.cpfs.contains([cpf])
+    # Valida conforme o tipo de usuário
+    if data.tipo_usuario == "produtor":
+        if data.subtipo_usuario == "fornecedor_individual":
+            if not data.cpf:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="CPF é obrigatório para fornecedor individual"
+                )
+            existing_cpf = db.query(FornecedorIndividual).filter(
+                FornecedorIndividual.cpf == data.cpf
             ).first()
             if existing_cpf:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"CPF {cpf} já cadastrado em outro grupo"
+                    detail="CPF já cadastrado"
                 )
 
-    elif data.tipo_conta == "grupo_formal":
-        if not data.cnpj:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="CNPJ é obrigatório para grupo formal"
-            )
+        elif data.subtipo_usuario == "grupo_informal":
+            if not data.participantes or len(data.participantes) == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Lista de participantes é obrigatória para grupo informal"
+                )
+            # Valida que cada participante tem nome e CPF
+            for p in data.participantes:
+                if not p.nome or not p.cpf:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail="Cada participante deve ter nome e CPF"
+                    )
 
-        # Verifica se o CNPJ já está cadastrado
-        existing_cnpj = db.query(GrupoFormal).filter(
-            GrupoFormal.cnpj == data.cnpj
-        ).first()
-        if existing_cnpj:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="CNPJ já cadastrado"
-            )
+        elif data.subtipo_usuario == "grupo_formal":
+            if not data.cnpj:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="CNPJ é obrigatório para grupo formal"
+                )
+            existing_cnpj = db.query(GrupoFormal).filter(
+                GrupoFormal.cnpj == data.cnpj
+            ).first()
+            if existing_cnpj:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="CNPJ já cadastrado"
+                )
+
+    elif data.tipo_usuario == "entidade_executora":
+        if data.subtipo_usuario == "escola":
+            if not data.nome_escola:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Nome da escola é obrigatório"
+                )
+
+        elif data.subtipo_usuario == "governo":
+            if not data.nome_orgao:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Nome do órgão é obrigatório"
+                )
+            if not data.nivel:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Nível do órgão (municipal, estadual, federal) é obrigatório"
+                )
 
     else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Tipo de conta inválido. Use: fornecedor_individual, grupo_informal ou grupo_formal"
+            detail="Tipo de usuário inválido. Use: 'produtor' ou 'entidade_executora'"
         )
+
+    # Valida coordenadas GPS se fornecidas
+    if data.latitude is not None or data.longitude is not None:
+        if data.latitude is None or data.longitude is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Latitude e longitude devem ser fornecidas juntas"
+            )
+        if not (-90 <= data.latitude <= 90):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Latitude deve estar entre -90 e 90"
+            )
+        if not (-180 <= data.longitude <= 180):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Longitude deve estar entre -180 e 180"
+            )
 
     # Cria o usuário
     new_user = User(
         name=data.name,
         email=data.email,
         senha=data.senha,
-        role=data.tipo_conta
+        tipo_usuario=data.tipo_usuario,
+        subtipo_usuario=data.subtipo_usuario,
+        latitude=data.latitude,
+        longitude=data.longitude
     )
 
     db.add(new_user)
-    db.flush()  # Flush para obter o ID do usuário sem commitar ainda
+    db.flush()
 
     # Cria a conta específica de acordo com o tipo
-    if data.tipo_conta == "fornecedor_individual":
-        conta = FornecedorIndividual(
-            user_id=new_user.id,
-            cpf=data.cpf
-        )
-        db.add(conta)
+    if data.tipo_usuario == "produtor":
+        if data.subtipo_usuario == "fornecedor_individual":
+            conta = FornecedorIndividual(
+                user_id=new_user.id,
+                cpf=data.cpf
+            )
+            db.add(conta)
 
-    elif data.tipo_conta == "grupo_informal":
-        conta = GrupoInformal(
-            user_id=new_user.id,
-            cpfs=data.cpfs
-        )
-        db.add(conta)
+        elif data.subtipo_usuario == "grupo_informal":
+            # Converte participantes para lista de dicts para armazenar em JSON
+            participantes_list = [
+                {"nome": p.nome, "cpf": p.cpf}
+                for p in data.participantes
+            ]
+            conta = GrupoInformal(
+                user_id=new_user.id,
+                participantes=participantes_list
+            )
+            db.add(conta)
 
-    elif data.tipo_conta == "grupo_formal":
-        conta = GrupoFormal(
-            user_id=new_user.id,
-            cnpj=data.cnpj
-        )
-        db.add(conta)
+        elif data.subtipo_usuario == "grupo_formal":
+            conta = GrupoFormal(
+                user_id=new_user.id,
+                cnpj=data.cnpj
+            )
+            db.add(conta)
+
+    elif data.tipo_usuario == "entidade_executora":
+        if data.subtipo_usuario == "escola":
+            escola = Escola(
+                user_id=new_user.id,
+                nome_escola=data.nome_escola,
+                endereco=data.endereco,
+                telefone=data.telefone
+            )
+            db.add(escola)
+
+        elif data.subtipo_usuario == "governo":
+            governo = Governo(
+                user_id=new_user.id,
+                nome_orgao=data.nome_orgao,
+                nivel=data.nivel,
+                endereco=data.endereco,
+                telefone=data.telefone
+            )
+            db.add(governo)
 
     db.commit()
     db.refresh(new_user)
 
-    return {
-        "message": f"Conta {data.tipo_conta} criada com sucesso",
+    response = {
+        "message": f"Usuário {data.tipo_usuario} ({data.subtipo_usuario}) criado com sucesso",
         "user_id": new_user.id,
-        "tipo_conta": data.tipo_conta,
+        "tipo_usuario": data.tipo_usuario,
+        "subtipo_usuario": data.subtipo_usuario,
         "email": new_user.email,
         "name": new_user.name
     }
+
+    # Adiciona localização se fornecida
+    if new_user.latitude is not None and new_user.longitude is not None:
+        response["localizacao"] = {
+            "latitude": new_user.latitude,
+            "longitude": new_user.longitude
+        }
+
+    return response
 
 @router.post("/token")
 async def login_for_access_token(

@@ -1,5 +1,5 @@
 # models/User_model.py
-from sqlalchemy import Integer, String, TIMESTAMP
+from sqlalchemy import Integer, String, TIMESTAMP, Float
 from sqlalchemy.orm import mapped_column
 from db.base import Base  # Importação direta da Base
 from passlib.context import CryptContext
@@ -13,7 +13,20 @@ class User(Base):
     name = mapped_column(String(255), nullable=False)
     email = mapped_column(String(255), unique=True, nullable=False)
     senha = mapped_column(String(255), nullable=False)
-    role = mapped_column(String(100), nullable=True)  # Optional role, accepts any string
+
+    # Tipo de usuário: "entidade_executora" ou "produtor"
+    tipo_usuario = mapped_column(String(50), nullable=False)
+
+    # Subtipo específico:
+    # Se tipo_usuario="entidade_executora": "escola" ou "governo"
+    # Se tipo_usuario="produtor": "fornecedor_individual", "grupo_informal" ou "grupo_formal"
+    subtipo_usuario = mapped_column(String(50), nullable=False)
+
+    # Localização (coordenadas GPS)
+    latitude = mapped_column(Float, nullable=True)
+    longitude = mapped_column(Float, nullable=True)
+
+    role = mapped_column(String(100), nullable=True)  # Kept for backward compatibility
     created_at = mapped_column(TIMESTAMP, server_default='NOW()')
 
     def __init__(self, **kwargs):

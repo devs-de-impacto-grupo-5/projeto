@@ -4,6 +4,35 @@ from sqlalchemy.orm import mapped_column, relationship
 from db.base import Base
 
 
+class Escola(Base):
+    __tablename__ = "escolas"
+
+    id = mapped_column(Integer, primary_key=True)
+    user_id = mapped_column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    nome_escola = mapped_column(String(255), nullable=False)
+    endereco = mapped_column(Text, nullable=True)
+    telefone = mapped_column(String(20), nullable=True)
+    created_at = mapped_column(TIMESTAMP, server_default='NOW()')
+
+    # Relação com User
+    user = relationship("User", backref="escola")
+
+
+class Governo(Base):
+    __tablename__ = "governos"
+
+    id = mapped_column(Integer, primary_key=True)
+    user_id = mapped_column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    nome_orgao = mapped_column(String(255), nullable=False)
+    nivel = mapped_column(String(50), nullable=False)  # "municipal", "estadual", "federal"
+    endereco = mapped_column(Text, nullable=True)
+    telefone = mapped_column(String(20), nullable=True)
+    created_at = mapped_column(TIMESTAMP, server_default='NOW()')
+
+    # Relação com User
+    user = relationship("User", backref="governo")
+
+
 class Produto(Base):
     __tablename__ = "produtos"
 
@@ -38,7 +67,8 @@ class GrupoInformal(Base):
 
     id = mapped_column(Integer, primary_key=True)
     user_id = mapped_column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
-    cpfs = mapped_column(JSON, nullable=False)  # Lista de CPFs dos participantes
+    # Armazena lista de participantes: [{"nome": "...", "cpf": "..."}, ...]
+    participantes = mapped_column(JSON, nullable=False)
     created_at = mapped_column(TIMESTAMP, server_default='NOW()')
 
     # Relação com User

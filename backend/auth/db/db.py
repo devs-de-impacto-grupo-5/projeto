@@ -45,7 +45,14 @@ def get_db():
 def create_tables():
     """Importa os modelos APÓS criar a Base"""
     from models.User_model import User  # Importação local
-    from models.Conta_model import FornecedorIndividual, GrupoInformal, GrupoFormal, Produto
+    from models.Conta_model import (
+        FornecedorIndividual,
+        GrupoInformal,
+        GrupoFormal,
+        Produto,
+        Escola,
+        Governo
+    )
     db_engine = get_engine()
     Base.metadata.create_all(bind=db_engine)
 
