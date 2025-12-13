@@ -3,17 +3,24 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from pydantic import BaseModel
 from schemas.Password_schema import PasswordReset, PasswordResetRequest
 from schemas.User_schema import UserCreate
+from schemas.Register_schema import (
+    RegisterRequest,
+    RegisterFornecedorIndividual,
+    RegisterGrupoInformal,
+    RegisterGrupoFormal
+)
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from security.security import (
     create_access_token,
     send_password_reset_email,
-    ACCESS_TOKEN_EXPIRE_MINUTES, 
+    ACCESS_TOKEN_EXPIRE_MINUTES,
     get_db,
     get_password_reset_token,
     verify_password_reset_token
 )
 from models.User_model import User, pwd_context
+from models.Conta_model import FornecedorIndividual, GrupoInformal, GrupoFormal
 
 router = APIRouter(tags=["Autenticação"])
 
@@ -24,7 +31,7 @@ router = APIRouter(tags=["Autenticação"])
 
 @router.post("/registrar", status_code=status.HTTP_201_CREATED)
 async def registrar_usuario(
-    user_data: UserCreate, 
+    user_data: UserCreate,
     db: Session = Depends(get_db)
 ):
     """Registra um novo usuário no sistema"""
@@ -52,6 +59,132 @@ async def registrar_usuario(
     return {
         "message": "Usuário criado com sucesso",
         "user_id": new_user.id
+    }
+
+
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+async def register(
+    data: RegisterRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Registra um novo usuário e conta de acordo com o tipo especificado.
+
+    Tipos de conta suportados:
+    - fornecedor_individual: Requer CPF
+    - grupo_informal: Requer lista de CPFs
+    - grupo_formal: Requer CNPJ
+    """
+
+    # Verifica se o email já está cadastrado
+    existing_user = db.query(User).filter(User.email == data.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email já cadastrado"
+        )
+
+    # Valida os dados de acordo com o tipo de conta
+    if data.tipo_conta == "fornecedor_individual":
+        if not data.cpf:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="CPF é obrigatório para fornecedor individual"
+            )
+
+        # Verifica se o CPF já está cadastrado
+        existing_cpf = db.query(FornecedorIndividual).filter(
+            FornecedorIndividual.cpf == data.cpf
+        ).first()
+        if existing_cpf:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="CPF já cadastrado"
+            )
+
+    elif data.tipo_conta == "grupo_informal":
+        if not data.cpfs or len(data.cpfs) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Lista de CPFs é obrigatória para grupo informal"
+            )
+
+        # Verifica se algum CPF já está cadastrado
+        for cpf in data.cpfs:
+            existing_cpf = db.query(GrupoInformal).filter(
+                GrupoInformal.cpfs.contains([cpf])
+            ).first()
+            if existing_cpf:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"CPF {cpf} já cadastrado em outro grupo"
+                )
+
+    elif data.tipo_conta == "grupo_formal":
+        if not data.cnpj:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="CNPJ é obrigatório para grupo formal"
+            )
+
+        # Verifica se o CNPJ já está cadastrado
+        existing_cnpj = db.query(GrupoFormal).filter(
+            GrupoFormal.cnpj == data.cnpj
+        ).first()
+        if existing_cnpj:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="CNPJ já cadastrado"
+            )
+
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Tipo de conta inválido. Use: fornecedor_individual, grupo_informal ou grupo_formal"
+        )
+
+    # Cria o usuário
+    new_user = User(
+        name=data.name,
+        email=data.email,
+        senha=data.senha,
+        role=data.tipo_conta
+    )
+
+    db.add(new_user)
+    db.flush()  # Flush para obter o ID do usuário sem commitar ainda
+
+    # Cria a conta específica de acordo com o tipo
+    if data.tipo_conta == "fornecedor_individual":
+        conta = FornecedorIndividual(
+            user_id=new_user.id,
+            cpf=data.cpf
+        )
+        db.add(conta)
+
+    elif data.tipo_conta == "grupo_informal":
+        conta = GrupoInformal(
+            user_id=new_user.id,
+            cpfs=data.cpfs
+        )
+        db.add(conta)
+
+    elif data.tipo_conta == "grupo_formal":
+        conta = GrupoFormal(
+            user_id=new_user.id,
+            cnpj=data.cnpj
+        )
+        db.add(conta)
+
+    db.commit()
+    db.refresh(new_user)
+
+    return {
+        "message": f"Conta {data.tipo_conta} criada com sucesso",
+        "user_id": new_user.id,
+        "tipo_conta": data.tipo_conta,
+        "email": new_user.email,
+        "name": new_user.name
     }
 
 @router.post("/token")
