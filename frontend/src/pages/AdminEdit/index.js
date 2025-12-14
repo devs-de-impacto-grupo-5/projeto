@@ -79,14 +79,14 @@ const EditalDetail = () => {
           'Content-Type': 'application/json',
         };
 
-        const demandaResponse = await fetch(`http://localhost:8084/demandas/${id}`, { headers });
+        const demandaResponse = await fetch(`https://rj-devs-impacto-api.onrender.com/demandas/${id}`, { headers });
         if (demandaResponse.ok) {
           const demandaData = await demandaResponse.json();
           setDemanda(demandaData);
 
           if (demandaData.versao_atual_id) {
             const propostasResponse = await fetch(
-              `http://localhost:8084/propostas?versao_demanda_id=${demandaData.versao_atual_id}`,
+              `https://rj-devs-impacto-api.onrender.com/propostas?versao_demanda_id=${demandaData.versao_atual_id}`,
               { headers },
             );
             if (propostasResponse.ok) {
@@ -153,7 +153,7 @@ const EditalDetail = () => {
   const handleExportDetails = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8084/admin/editais/${id}/download`, {
+      const response = await fetch(`https://rj-devs-impacto-api.onrender.com/admin/editais/${id}/download`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

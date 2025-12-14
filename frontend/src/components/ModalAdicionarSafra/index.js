@@ -50,7 +50,7 @@ const ModalAdicionarSafra = ({ isOpen, onClose, onSuccess, produtorId }) => {
         observacoes: formData.observacoes || null,
       };
 
-      const resp = await fetch('http://localhost:8084/produtores/producao/manual', {
+      const resp = await fetch('https://rj-devs-impacto-api.onrender.com/produtores/producao/manual', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -37,7 +37,7 @@ const MenuProdutorSafras = () => {
         setLoading(false);
         return;
       }
-      const resp = await fetch(`http://localhost:8084/produtores/producao/${produtorId}`, {
+      const resp = await fetch(`https://rj-devs-impacto-api.onrender.com/produtores/producao/${produtorId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (resp.status === 401) {

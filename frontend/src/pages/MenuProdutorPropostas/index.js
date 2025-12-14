@@ -27,7 +27,7 @@ const MenuProdutorPropostas = () => {
           return;
         }
         const produtorId = localStorage.getItem('produtor_id') || localStorage.getItem('user_id');
-        const resp = await fetch(`http://localhost:8084/propostas?produtor_id=${produtorId}`, {
+        const resp = await fetch(`https://rj-devs-impacto-api.onrender.com/propostas?produtor_id=${produtorId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (resp.status === 401) {

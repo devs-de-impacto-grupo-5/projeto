@@ -26,7 +26,7 @@ const MenuProdutorNotificacoes = () => {
           setLoading(false);
           return;
         }
-        const resp = await fetch(`http://localhost:8084/notificacoes/minhas`, {
+        const resp = await fetch(`https://rj-devs-impacto-api.onrender.com/notificacoes/minhas`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (resp.status === 401) {

@@ -101,7 +101,7 @@ const AdminProd = () => {
           'Content-Type': 'application/json',
         };
 
-        const response = await fetch('http://localhost:8084/admin/usuarios', { headers });
+        const response = await fetch('https://rj-devs-impacto-api.onrender.com/admin/usuarios', { headers });
         if (response.ok) {
           const data = await response.json();
           setUsers(data);

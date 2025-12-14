@@ -101,9 +101,9 @@ docker compose ps
 
 ### Acessar a API Local
 
-- **URL Base**: http://localhost:8084
-- **Documentação Swagger**: http://localhost:8084/docs
-- **Documentação ReDoc**: http://localhost:8084/redoc
+- **URL Base**: https://rj-devs-impacto-api.onrender.com
+- **Documentação Swagger**: https://rj-devs-impacto-api.onrender.com/docs
+- **Documentação ReDoc**: https://rj-devs-impacto-api.onrender.com/redoc
 
 ## 📁 Estrutura do Projeto
 

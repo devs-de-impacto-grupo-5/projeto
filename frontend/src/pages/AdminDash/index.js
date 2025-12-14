@@ -133,7 +133,7 @@ const AdminDash = () => {
           'Content-Type': 'application/json',
         };
 
-        const statsResponse = await fetch('http://localhost:8084/admin/relatorio', { headers });
+        const statsResponse = await fetch('https://rj-devs-impacto-api.onrender.com/admin/relatorio', { headers });
         if (statsResponse.ok) {
           const statsData = await statsResponse.json();
           setStats({
@@ -143,7 +143,7 @@ const AdminDash = () => {
           });
         }
 
-        const editaisResponse = await fetch('http://localhost:8084/admin/dashboard/editais', { headers });
+        const editaisResponse = await fetch('https://rj-devs-impacto-api.onrender.com/admin/dashboard/editais', { headers });
         if (editaisResponse.ok) {
           const editaisData = await editaisResponse.json();
           setEditais(editaisData);
@@ -248,7 +248,7 @@ const AdminDash = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8084/editais/processar', {
+      const response = await fetch('https://rj-devs-impacto-api.onrender.com/editais/processar', {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: formData,
@@ -279,7 +279,7 @@ const AdminDash = () => {
   const saveReport = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8084/admin/relatorio/download', {
+      const response = await fetch('https://rj-devs-impacto-api.onrender.com/admin/relatorio/download', {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 
@@ -314,7 +314,7 @@ const AdminDash = () => {
     setMatchLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8084/match/execute/${versaoId}?trigger=manual_api`, {
+      const response = await fetch(`https://rj-devs-impacto-api.onrender.com/match/execute/${versaoId}?trigger=manual_api`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
@@ -334,7 +334,7 @@ const AdminDash = () => {
   const handleExportReport = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8084/admin/relatorio/download', {
+      const response = await fetch('https://rj-devs-impacto-api.onrender.com/admin/relatorio/download', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

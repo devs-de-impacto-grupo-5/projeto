@@ -31,7 +31,7 @@ const MenuProdutorEditais = () => {
           setLoading(false);
           return;
         }
-        const resp = await fetch(`http://localhost:8084/demandas?status=published`, {
+        const resp = await fetch(`https://rj-devs-impacto-api.onrender.com/demandas?status=published`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (resp.status === 401) {
@@ -61,7 +61,7 @@ const MenuProdutorEditais = () => {
     }
     try {
       setLoadingApplyId(demandaId);
-      const detalheResp = await fetch(`http://localhost:8084/demandas/${demandaId}`, {
+      const detalheResp = await fetch(`https://rj-devs-impacto-api.onrender.com/demandas/${demandaId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!detalheResp.ok) throw new Error('Não foi possível carregar o edital.');
@@ -89,7 +89,7 @@ const MenuProdutorEditais = () => {
         itens,
       };
 
-      const propostaResp = await fetch('http://localhost:8084/propostas', {
+      const propostaResp = await fetch('https://rj-devs-impacto-api.onrender.com/propostas', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
