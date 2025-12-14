@@ -8,9 +8,13 @@ export const Container = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 20px 40px;
+  padding: 20px 32px;
   background: linear-gradient(135deg, ${neutral} 0%, #ffffff 100%);
   overflow-x: hidden;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 
   @media (min-width: 1024px) {
     display: grid;
@@ -22,11 +26,11 @@ export const Container = styled.div`
       "buttons image"
       "link image";
     gap: 0px 60px;
-    max-width: 1280px;
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
     justify-items: start;
     align-content: center;
-    padding: 0 60px;
+    padding: 0 40px;
   }
 `;
 
@@ -83,11 +87,12 @@ export const ProdutorWrapper = styled.div`
   margin-bottom: ${largeSpacing};
   position: relative;
   transition: all 0.3s ease;
+  overflow: hidden;
 
   @media (min-width: 1024px) {
     grid-area: image;
-    width: 500px;
-    height: 500px;
+    width: min(520px, 45vw);
+    height: min(520px, 45vw);
     margin-bottom: 0;
     /* Organic blob shape */
     border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
@@ -97,15 +102,16 @@ export const ProdutorWrapper = styled.div`
 `;
 
 export const ProdutorImage = styled.img`
-  width: 250px;
-  height: auto;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   position: relative;
   z-index: 1;
 
   @media (min-width: 1024px) {
-    width: 650px;
-    /* Slightly offset the image for dynamic feel */
-    transform: translate(-20px, -20px);
+    width: 100%;
+    height: 100%;
+    transform: none;
   }
 `;
 

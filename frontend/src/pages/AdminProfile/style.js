@@ -212,7 +212,8 @@ export const ProfileCard = styled.div`
   display: flex;
   flex-direction: column;
   gap: 28px;
-  max-width: 920px;
+  width: min(1200px, 100%);
+  align-self: center;
 `;
 
 export const ProfileHeader = styled.div`

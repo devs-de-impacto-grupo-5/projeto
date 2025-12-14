@@ -81,14 +81,19 @@ def custom_openapi():
 # Aplica o esquema personalizado
 app.openapi = custom_openapi
 
-# Middleware de CORS (mantenha como está)
-origins = ["*"]
+# Middleware de CORS
+# Quando allow_credentials=True, nÃ£o se pode usar wildcard "*".
+# Defina explicitamente os frontends permitidos.
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 app.add_middleware(
     CORSMiddleware,
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
-    allow_origins=["*"]
+    allow_origins=origins,
 )
 
 # Incluir todos os routers
@@ -107,4 +112,3 @@ app.include_router(Notificacoes_routers)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8084, log_level="info")
-

@@ -75,7 +75,8 @@ const RegisterAddress = () => {
         longitude: 0
       };
 
-      const response = await fetch('http://localhost:8084/register', {
+      // FastAPI is mounted with root_path "/api/auth"
+      const response = await fetch('http://localhost:8084/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,8 +85,14 @@ const RegisterAddress = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Erro ao registrar');
+        let errorMessage = 'Erro ao registrar';
+        try {
+          const errorData = await response.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch (_err) {
+          // ignore JSON parse errors and use default message
+        }
+        throw new Error(errorMessage);
       }
 
       alert('Cadastro realizado com sucesso!');

@@ -135,3 +135,16 @@ class DocumentoChecklistResponse(BaseModel):
     documentos_reprovados: int
     perfil_completo: bool
     itens: List[DocumentoChecklistItem]
+
+
+class ChecklistSecao(BaseModel):
+    """Secao de um checklist de projeto de venda"""
+    titulo: str
+    itens: List[str]
+
+
+class ProjetoVendaChecklist(BaseModel):
+    """Checklist estruturado para cada modelo de projeto de venda"""
+    subtipo: str  # fornecedor_individual|grupo_informal|grupo_formal
+    titulo: str
+    secoes: List[ChecklistSecao]

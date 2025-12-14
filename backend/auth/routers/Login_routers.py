@@ -188,13 +188,23 @@ async def register(
     if data.tipo_usuario == "produtor":
         # Cria o PerfilProdutor para todos os tipos de produtores
         endereco_json = None
-        if data.latitude and data.longitude:
+        if data.latitude is not None and data.longitude is not None:
             endereco_json = {
                 "geo": {
                     "latitude": data.latitude,
                     "longitude": data.longitude
                 }
             }
+
+        # Adiciona endereÇõo enviado no payload
+        if data.endereco or data.numero or data.cidade or data.uf:
+            endereco_json = endereco_json or {}
+            endereco_json.update({
+                "endereco": data.endereco,
+                "numero": data.numero,
+                "cidade": data.cidade,
+                "uf": data.uf
+            })
 
         perfil_produtor = PerfilProdutor(
             user_id=new_user.id,
@@ -235,25 +245,7 @@ async def register(
             db.add(conta)
 
         # Cria PerfilProdutor se houver dados de endereço
-        if data.endereco or data.cidade or data.uf:
-            tipo_produtor_map = {
-                "fornecedor_individual": "individual",
-                "grupo_informal": "association",
-                "grupo_formal": "cooperative"
-            }
-            tipo = tipo_produtor_map.get(data.subtipo_usuario, "individual")
-            
-            perfil = PerfilProdutor(
-                user_id=new_user.id,
-                tipo_produtor=tipo,
-                endereco_json={
-                    "endereco": data.endereco,
-                    "numero": data.numero,
-                    "cidade": data.cidade,
-                    "uf": data.uf
-                }
-            )
-            db.add(perfil)
+        # Dados de endereÇõo jÇ­ foram anexados ao perfil_produtor acima
 
     elif data.tipo_usuario == "entidade_executora":
         if data.subtipo_usuario == "escola":

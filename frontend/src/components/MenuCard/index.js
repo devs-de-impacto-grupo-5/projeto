@@ -6,7 +6,7 @@ const MenuCard = ({ title, icon: Icon, iconColor, onClick }) => {
       <Title>{title}</Title>
       {Icon && (
         <IconWrapper color={iconColor}>
-          <Icon size={48} />
+          <Icon size={28} />
         </IconWrapper>
       )}
     </Container>

@@ -98,7 +98,7 @@ const AdminProfile = () => {
 
   const roleLabel = useMemo(() => {
     if (!userData) return '';
-    if (userData.role === 'admin_master') return 'Admin Master';
+    if (userData.role === 'admin') return 'Admin Master';
     if (userData.role) return userData.role;
     return 'Administrador';
   }, [userData]);
@@ -138,6 +138,14 @@ const AdminProfile = () => {
           <ActionRow>
             <ActionButton type="button">Exportar dados</ActionButton>
             <ActionButton $primary type="button">Editar perfil</ActionButton>
+            <ActionButton type="button" onClick={() => {
+              localStorage.removeItem('token');
+              localStorage.removeItem('user_id');
+              localStorage.removeItem('user_name');
+              window.location.href = '/admin/login';
+            }}>
+              Sair
+            </ActionButton>
           </ActionRow>
         </PageHeader>
 

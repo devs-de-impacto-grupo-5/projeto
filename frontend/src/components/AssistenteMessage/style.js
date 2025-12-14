@@ -6,8 +6,9 @@ export const Container = styled.div`
   align-items: flex-start;
   gap: 12px;
   width: 100%;
-  max-width: 540px;
+  max-width: 720px;
   margin-bottom: 20px;
+  margin-right: auto;
 `;
 
 export const IconWrapper = styled.div`
@@ -25,7 +26,7 @@ export const MessageBox = styled.div`
   background-color: white;
   border-radius: 0 16px 16px 16px;
   padding: 16px 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   flex: 1;
 `;
 

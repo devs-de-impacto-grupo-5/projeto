@@ -176,7 +176,6 @@ async def criar_demanda(
 @router.get("/{demanda_id}", response_model=DemandaResponse)
 async def obter_demanda(
     demanda_id: int,
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -245,7 +244,6 @@ async def obter_demanda(
 async def listar_demandas(
     user_id: int = None,
     status: str = None,
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -481,4 +479,3 @@ async def diagnostico_catalogo(db: Session = Depends(get_db)):
             for u in unidades
         ]
     }
-

@@ -2,10 +2,9 @@ import { PiHeadsetFill, PiPlantFill, PiFileTextFill, PiHandshakeFill, PiBellFill
 import { useNavigate } from 'react-router-dom';
 import MenuCard from '../../components/MenuCard';
 import { ReactComponent as ProdutorIcon } from '../../assets/svgs/produtor.svg';
-import upperFormat from '../../assets/svgs/upperFormat.svg';
-import downFormat from '../../assets/svgs/downFormat.svg';
 import {
   Container,
+  Content,
   Header,
   HelpButton,
   UserSection,
@@ -13,66 +12,88 @@ import {
   UserInfo,
   Greeting,
   UserName,
-  MenuTitle,
+  HeroCard,
+  HeroTitle,
+  HeroSubtitle,
+  ActionsRow,
+  PillAction,
+  SectionTitle,
   MenuSubtitle,
-  CardsGrid,
-  TopRightBlob,
-  BottomLeftBlob
+  CardsGrid
 } from './style';
 
 const MenuProdutor = () => {
   const navigate = useNavigate();
+  const nome = localStorage.getItem('user_name');
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return `Bom dia,`;
+    if (hour < 18) return `Boa tarde,`;
+    return `Boa noite,`;
+  };
 
   return (
     <Container>
-      <TopRightBlob src={upperFormat} alt="" />
-      <BottomLeftBlob src={downFormat} alt="" />
-      
-      <Header>
-        <HelpButton onClick={() => console.log('Help')} aria-label="Ajuda">
-          <PiHeadsetFill size={24} />
-        </HelpButton>
-      </Header>
+      <Content>
+        <Header>
+          <UserSection>
+            <Avatar onClick={() => navigate('/admin/dash')} style={{ cursor: 'pointer' }}>
+              <ProdutorIcon width={32} height={32} />
+            </Avatar>
+            <UserInfo>
+              <Greeting>{getGreeting()}</Greeting>
+              {nome && <UserName>{nome}</UserName>}
+            </UserInfo>
+          </UserSection>
+          <HelpButton onClick={() => console.log('Help')} aria-label="Ajuda">
+            <PiHeadsetFill size={22} />
+          </HelpButton>
+        </Header>
 
-      <UserSection>
-        <Avatar onClick={() => navigate('/admin/dash')} style={{ cursor: 'pointer' }}>
-          <ProdutorIcon width={32} height={32} />
-        </Avatar>
-        <UserInfo>
-          <Greeting>Bom dia,</Greeting>
-          <UserName>João Silva</UserName>
-        </UserInfo>
-      </UserSection>
+        <HeroCard>
+          <div>
+            <HeroTitle>Menu Principal</HeroTitle>
+            <HeroSubtitle>Gerencie safras, editais e propostas em um só lugar.</HeroSubtitle>
+            <ActionsRow>
+              <PillAction onClick={() => navigate('/menu-produtor/editais')}>Meus editais</PillAction>
+              <PillAction $ghost onClick={() => navigate('/menu-produtor/notificacoes')}>
+                Notificações
+              </PillAction>
+            </ActionsRow>
+          </div>
+        </HeroCard>
 
-      <MenuTitle>Menu Principal</MenuTitle>
-      <MenuSubtitle>O que quer fazer?</MenuSubtitle>
+        <SectionTitle>O que quer fazer?</SectionTitle>
+        <MenuSubtitle>Escolha um atalho abaixo.</MenuSubtitle>
 
-      <CardsGrid>
-        <MenuCard
-          title="Minhas Safras"
-          icon={PiPlantFill}
-          iconColor="#AE84E6"
-          onClick={() => console.log('Minhas Safras')}
-        />
-        <MenuCard
-          title="Meus Editais"
-          icon={PiFileTextFill}
-          iconColor="#B2E3AB"
-          onClick={() => console.log('Meus editais')}
-        />
-        <MenuCard
-          title="Propostas"
-          icon={PiHandshakeFill}
-          iconColor="#F9D67A"
-          onClick={() => console.log('Propostas')}
-        />
-        <MenuCard
-          title="Notificações"
-          icon={PiBellFill}
-          iconColor="#FFB6C1"
-          onClick={() => console.log('Notificações')}
-        />
-      </CardsGrid>
+        <CardsGrid>
+          <MenuCard
+            title="Minhas Safras"
+            icon={PiPlantFill}
+            iconColor="#AE84E6"
+            onClick={() => navigate('/menu-produtor/safras')}
+          />
+          <MenuCard
+            title="Meus Editais"
+            icon={PiFileTextFill}
+            iconColor="#B2E3AB"
+            onClick={() => navigate('/menu-produtor/editais')}
+          />
+          <MenuCard
+            title="Propostas"
+            icon={PiHandshakeFill}
+            iconColor="#F9D67A"
+            onClick={() => navigate('/menu-produtor/propostas')}
+          />
+          <MenuCard
+            title="Notificações"
+            icon={PiBellFill}
+            iconColor="#FFB6C1"
+            onClick={() => navigate('/menu-produtor/notificacoes')}
+          />
+        </CardsGrid>
+      </Content>
     </Container>
   );
 };

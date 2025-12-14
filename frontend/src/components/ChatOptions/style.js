@@ -4,7 +4,7 @@ import { darkPurple } from '../../constants/colors';
 export const Container = styled.div`
   display: flex;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 6px;
   flex-wrap: wrap;
 `;
 

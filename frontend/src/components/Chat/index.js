@@ -5,7 +5,7 @@ import ChatHeader from '../ChatHeader';
 import ChatInput from '../ChatInput';
 import ChatOptions from '../ChatOptions';
 import FileUpload from '../FileUpload';
-import { Container, MessagesContainer } from './style';
+import { Container, ChatBody, MessagesContainer, InputWrapper } from './style';
 
 const Chat = ({
   onBack,
@@ -47,24 +47,30 @@ const Chat = ({
   return (
     <Container>
       <ChatHeader onBack={onBack} onHelp={onHelp} />
-      <MessagesContainer>
-        {messages.map((msg, index) => (
-          msg.type === 'assistente' ? (
-            <AssistenteMessage key={index}>{msg.text}</AssistenteMessage>
-          ) : msg.type === 'options' ? (
-            <ChatOptions key={index} options={msg.options} onSelect={handleOptionSelect} />
-          ) : (
-            <ProdutorMessage key={index}>{msg.text}</ProdutorMessage>
-          )
-        ))}
-      </MessagesContainer>
-      {showFileUpload && <FileUpload onFileSelect={handleFileUpload} />}
+      <ChatBody>
+        <MessagesContainer>
+          {messages.map((msg, index) =>
+            msg.type === 'assistente' ? (
+              <AssistenteMessage key={index}>{msg.text}</AssistenteMessage>
+            ) : msg.type === 'options' ? (
+              <ChatOptions key={index} options={msg.options} onSelect={handleOptionSelect} />
+            ) : (
+              <ProdutorMessage key={index}>{msg.text}</ProdutorMessage>
+            )
+          )}
+        </MessagesContainer>
+      </ChatBody>
+
+      {showFileUpload && (
+        <InputWrapper>
+          <FileUpload onFileSelect={handleFileUpload} />
+        </InputWrapper>
+      )}
+
       {showInput && !showFileUpload && (
-        <ChatInput
-          type={inputType}
-          placeholder={placeholder}
-          onSend={handleSend}
-        />
+        <InputWrapper>
+          <ChatInput type={inputType} placeholder={placeholder} onSend={handleSend} />
+        </InputWrapper>
       )}
     </Container>
   );

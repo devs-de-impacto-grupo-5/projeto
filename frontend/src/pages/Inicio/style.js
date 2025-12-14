@@ -4,7 +4,7 @@ import { neutral, darkPurple, lightGreen, lightPurple } from '../../constants/co
 export const Container = styled.div`
   background-color: ${neutral}; // Using the neutral color from constants
   min-height: 100vh;
-  width: 100vw;
+  width: 100%;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -16,7 +16,7 @@ export const Navbar = styled.nav`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 60px;
+  padding: 20px 32px;
   width: 100%;
   box-sizing: border-box;
   z-index: 20;
@@ -51,7 +51,7 @@ export const MainContent = styled.main`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 100px;
+  padding: 40px 32px;
   z-index: 10;
   width: 100%;
   box-sizing: border-box;

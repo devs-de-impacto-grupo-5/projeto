@@ -29,6 +29,15 @@ import buttonFlower from '../../assets/svgs/buttonFlower.svg';
 import whiteRect from '../../assets/svgs/whiteRect.svg';
 
 const Main = () => {
+  const nome = localStorage.getItem('user_name');
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Bom dia,';
+    if (hour < 18) return 'Boa tarde,';
+    return 'Boa noite,';
+  };
+
   return (
     <Container>
       <TopShape src={upperFormat} alt="" />
@@ -36,10 +45,10 @@ const Main = () => {
       
       <Header>
         <UserInfo>
-          <Avatar src={iconProfile} alt="João Silva" />
+          <Avatar src={iconProfile} alt={nome || 'Usuário'} />
           <Greeting>
-            <GreetingText>Bom dia,</GreetingText>
-            <UserName>João Silva</UserName>
+            <GreetingText>{getGreeting()}</GreetingText>
+            {nome && <UserName>{nome}</UserName>}
           </Greeting>
         </UserInfo>
         <SupportButton>

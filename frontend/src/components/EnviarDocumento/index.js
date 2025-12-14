@@ -6,17 +6,13 @@ const EnviarDocumento = ({ type = 'enviado', title, subtitle, onClick }) => {
   const isEnviado = type === 'enviado';
 
   return (
-    <Container onClick={onClick} type={type}>
-      <IconWrapper type={type}>
-        {isEnviado ? (
-          <FiCheck size={24} color="white" />
-        ) : (
-          <MdOutlineDescription size={24} color="white" />
-        )}
+    <Container onClick={onClick} type={isEnviado ? 'enviado' : 'pendente'}>
+      <IconWrapper type={isEnviado ? 'enviado' : 'pendente'}>
+        {isEnviado ? <FiCheck size={24} color="white" /> : <MdOutlineDescription size={24} color="white" />}
       </IconWrapper>
       <TextContainer>
         <Title>{title}</Title>
-        <Subtitle>{subtitle}</Subtitle>
+        <Subtitle type={isEnviado ? 'enviado' : 'pendente'}>{subtitle}</Subtitle>
       </TextContainer>
       {!isEnviado && (
         <ActionIcon>

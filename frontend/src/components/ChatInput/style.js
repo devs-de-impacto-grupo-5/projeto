@@ -5,16 +5,21 @@ export const Container = styled.form`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
-  background-color: ${neutral};
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.08);
+  border-top: 1px solid #edf0f3;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 1000px;
+  border-radius: 16px;
 `;
 
 export const Input = styled.input`
   flex: 1;
   padding: 12px 16px;
   border: 1px solid #ddd;
-  border-radius: 24px;
+  border-radius: 999px;
   font-size: 14px;
   outline: none;
 
@@ -24,6 +29,7 @@ export const Input = styled.input`
 
   &:focus {
     border-color: ${darkPurple};
+    box-shadow: 0 0 0 3px rgba(106, 58, 159, 0.15);
   }
 `;
 

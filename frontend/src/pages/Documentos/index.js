@@ -9,12 +9,11 @@ import { produtorIndividualDocs, grupoInformalDocs, grupoFormalDocs } from '../.
 const Documentos = () => {
   const navigate = useNavigate();
   const [documentos, setDocumentos] = useState([]);
+  const allChecked = documentos.length > 0 && documentos.every((doc) => doc.status === 'enviado');
 
   useEffect(() => {
-    // Busca subtipo do localStorage
     const subtipoUsuario = localStorage.getItem('subtipo_usuario');
 
-    // Mapeia subtipo para a lista correta de documentos
     let docsLista = [];
     if (subtipoUsuario === 'fornecedor_individual') {
       docsLista = produtorIndividualDocs;
@@ -24,21 +23,26 @@ const Documentos = () => {
       docsLista = grupoFormalDocs;
     }
 
-    // Cria lista de documentos com status pendente por padrão
-    const docsComStatus = docsLista.map(nomeDoc => ({
+    const enviados = JSON.parse(localStorage.getItem('docs_enviados') || '[]');
+    const docsComStatus = docsLista.map((nomeDoc) => ({
       nome: nomeDoc,
-      status: 'pendente'
+      status: enviados.includes(nomeDoc) ? 'enviado' : 'pendente',
     }));
 
     setDocumentos(docsComStatus);
   }, []);
 
+  const handleOpenUpload = (docNome) => {
+    navigate('/enviar-documento', {
+      state: {
+        documentoNome: docNome,
+      },
+    });
+  };
+
   return (
     <PageContainer>
-      <Header
-        onBack={() => console.log('Back')}
-        onHelp={() => console.log('Help')}
-      />
+      <Header onBack={() => console.log('Back')} onHelp={() => console.log('Help')} />
       <Container>
         <Title>Verificação de documentos</Title>
         <Description>
@@ -50,14 +54,15 @@ const Documentos = () => {
             type={doc.status}
             title={doc.nome}
             subtitle={doc.status === 'pendente' ? 'Toque para enviar' : 'Recebido com sucesso'}
-            onClick={() => navigate('/enviar-documento', { state: { documentoNome: doc.nome } })}
+            onClick={() => handleOpenUpload(doc.nome)}
           />
         ))}
       </Container>
       <BottomAction
         buttonText="Avançar para Produção"
         description="Complete os envios para continuar"
-        onClick={() => console.log('Avançar')}
+        disabled={!allChecked}
+        onClick={() => navigate('/menu-produtor')}
       />
     </PageContainer>
   );
