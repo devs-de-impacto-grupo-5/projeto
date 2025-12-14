@@ -37,40 +37,6 @@ router = APIRouter(tags=["Autenticação"])
 # ----------------------------
 # Endpoints
 # ----------------------------
-
-@router.post("/registrar", status_code=status.HTTP_201_CREATED)
-async def registrar_usuario(
-    user_data: UserCreate,
-    db: Session = Depends(get_db)
-):
-    """Registra um novo usuário no sistema"""
-
-    # Verifica se o email já está cadastrado
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email já cadastrado"
-        )
-
-    # Cria o usuário
-    new_user = User(
-        name=user_data.name,
-        email=user_data.email,
-        senha=user_data.senha,  # Será hasheado no __init__
-        role=user_data.role
-    )
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return {
-        "message": "Usuário criado com sucesso",
-        "user_id": new_user.id
-    }
-
-
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     data: RegisterRequest,
@@ -115,7 +81,10 @@ async def register(
                 )
 
         elif data.subtipo_usuario == "grupo_informal":
-            participantes_payload = data.participantes
+            participantes_payload = []
+            if data.participantes:
+                for p in data.participantes:
+                    participantes_payload.append(p if isinstance(p, dict) else p.model_dump())
             # compatibilidade: aceitar payload antigo com lista de CPFs
             if (not participantes_payload or len(participantes_payload) == 0) and data.cpfs:
                 participantes_payload = [{"cpf": cpf} for cpf in data.cpfs]
@@ -132,7 +101,7 @@ async def register(
                         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                         detail="Cada participante deve ter CPF"
                     )
-            data.participantes = [p if isinstance(p, dict) else p.model_dump() for p in participantes_payload]
+            data.participantes = participantes_payload
 
         elif data.subtipo_usuario == "grupo_formal":
             if not data.cnpj:

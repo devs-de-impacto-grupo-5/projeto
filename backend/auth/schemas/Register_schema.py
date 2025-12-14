@@ -93,4 +93,86 @@ class RegisterRequest(BaseModel):
     endereco: Optional[str] = None  # Para escola ou governo
     telefone: Optional[str] = None  # Para escola ou governo
 
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="ignore",
+        json_schema_extra={
+            "examples": [
+                {
+                    "summary": "Produtor - Fornecedor Individual",
+                    "value": {
+                        "tipo_usuario": "produtor",
+                        "subtipo_usuario": "fornecedor_individual",
+                        "name": "João Silva",
+                        "email": "joao@example.com",
+                        "senha": "senha123",
+                        "cpf": "123.456.789-10"
+                    }
+                },
+                {
+                    "summary": "Produtor - Grupo Informal (lista de CPFs)",
+                    "value": {
+                        "tipo_usuario": "produtor",
+                        "subtipo_usuario": "grupo_informal",
+                        "name": "Grupo Informal ABC",
+                        "email": "grupo.informal@example.com",
+                        "senha": "senha123",
+                        "cpfs": ["111.111.111-11", "222.222.222-22", "333.333.333-33"]
+                    }
+                },
+                {
+                    "summary": "Produtor - Grupo Informal (participantes detalhados)",
+                    "value": {
+                        "tipo_usuario": "produtor",
+                        "subtipo_usuario": "grupo_informal",
+                        "name": "Grupo de Produtores",
+                        "email": "grupo@example.com",
+                        "senha": "senha123",
+                        "participantes": [
+                            {"nome": "João Silva", "cpf": "111.111.111-11"},
+                            {"nome": "Maria Santos", "cpf": "222.222.222-22"},
+                            {"nome": "Pedro Costa", "cpf": "333.333.333-33"}
+                        ]
+                    }
+                },
+                {
+                    "summary": "Produtor - Grupo Formal",
+                    "value": {
+                        "tipo_usuario": "produtor",
+                        "subtipo_usuario": "grupo_formal",
+                        "name": "Associação de Produtores XYZ",
+                        "email": "assoc@example.com",
+                        "senha": "senha123",
+                        "cnpj": "12.345.678/0001-99"
+                    }
+                },
+                {
+                    "summary": "Entidade Executora - Escola",
+                    "value": {
+                        "tipo_usuario": "entidade_executora",
+                        "subtipo_usuario": "escola",
+                        "name": "Escola Estadual Exemplo",
+                        "email": "escola@example.com",
+                        "senha": "senha123",
+                        "nome_escola": "Escola Estadual ABC",
+                        "endereco": "Rua das Flores, 123",
+                        "telefone": "(21) 3333-4444"
+                    }
+                },
+                {
+                    "summary": "Entidade Executora - Governo",
+                    "value": {
+                        "tipo_usuario": "entidade_executora",
+                        "subtipo_usuario": "governo",
+                        "name": "Secretaria Municipal",
+                        "email": "governo@example.com",
+                        "senha": "senha123",
+                        "nome_orgao": "Secretaria Municipal de Agricultura",
+                        "nivel": "municipal",
+                        "endereco": "Av. Principal, 456",
+                        "telefone": "(21) 3333-5555"
+                    }
+                }
+            ]
+        },
+    )
