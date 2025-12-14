@@ -123,17 +123,27 @@ async def obter_checklist_documentos(
     """
     Obtém checklist completo de documentos do produtor.
     RF-05: Gestão de documentação (checklist e status)
+    Nota: produtor_id pode ser tanto PerfilProdutor.id quanto User.id
     """
+    # Tenta buscar por PerfilProdutor.id primeiro
     produtor = db.query(PerfilProdutor).filter(PerfilProdutor.id == produtor_id).first()
+
+    # Se não encontrar, tenta buscar por user_id
+    if not produtor:
+        produtor = db.query(PerfilProdutor).filter(PerfilProdutor.user_id == produtor_id).first()
+
     if not produtor:
         raise HTTPException(status_code=404, detail="Produtor não encontrado")
+
+    # Usa o id correto do PerfilProdutor para as queries seguintes
+    perfil_produtor_id = produtor.id
 
     # Busca todos os tipos de documentos
     tipos_docs = db.query(TipoDocumento).all()
 
     # Busca documentos existentes do produtor
     documentos_existentes = db.query(DocumentoProdutor).filter(
-        DocumentoProdutor.produtor_id == produtor_id
+        DocumentoProdutor.produtor_id == perfil_produtor_id
     ).all()
 
     # Cria mapa de documentos por tipo
@@ -181,7 +191,7 @@ async def obter_checklist_documentos(
     perfil_completo = total_pendentes == 0 and total_reprovados == 0
 
     return DocumentoChecklistResponse(
-        produtor_id=produtor_id,
+        produtor_id=perfil_produtor_id,
         total_documentos=len(tipos_docs),
         documentos_pendentes=total_pendentes,
         documentos_aprovados=total_aprovados,

@@ -32,6 +32,7 @@ from models.Conta_model import (
     Governo
 )
 from models.Documentos_model import DocumentoUsuario, DOCUMENTOS_REQUERIDOS
+from models.PerfilProdutor_model import PerfilProdutor
 
 router = APIRouter(tags=["Autenticação"])
 
@@ -180,6 +181,26 @@ async def register(
 
     # Cria a conta específica de acordo com o tipo
     if data.tipo_usuario == "produtor":
+        # Cria o PerfilProdutor para todos os tipos de produtores
+        endereco_json = None
+        if data.latitude and data.longitude:
+            endereco_json = {
+                "geo": {
+                    "latitude": data.latitude,
+                    "longitude": data.longitude
+                }
+            }
+
+        perfil_produtor = PerfilProdutor(
+            user_id=new_user.id,
+            tipo_produtor=data.subtipo_usuario,
+            identificacao_legal=data.cpf if data.subtipo_usuario == "fornecedor_individual" else data.cnpj,
+            endereco_json=endereco_json,
+            status_perfil='incomplete'
+        )
+        db.add(perfil_produtor)
+        db.flush()
+
         if data.subtipo_usuario == "fornecedor_individual":
             conta = FornecedorIndividual(
                 user_id=new_user.id,
