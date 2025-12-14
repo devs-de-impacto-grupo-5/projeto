@@ -5,13 +5,18 @@ import ChatHeader from '../ChatHeader';
 import ChatInput from '../ChatInput';
 import { Container, MessagesContainer } from './style';
 
-const Chat = ({ onBack, onHelp }) => {
-  const [messages, setMessages] = useState([
-    { type: 'assistente', text: 'Olá! Seja bem-vindo(a) ao Vitalis! \n \n Por favor, para sua segurança, digite seu CPF.' }
-  ]);
+const Chat = ({ onBack, onHelp, initialMessages, onSend, inputType, placeholder }) => {
+  const [messages, setMessages] = useState(initialMessages || []);
 
   const handleSend = (message) => {
-    setMessages([...messages, { type: 'produtor', text: message }]);
+    // Adiciona mensagem do produtor (censura se for senha)
+    const displayText = inputType === 'password' ? '•'.repeat(message.length) : message;
+    setMessages(prev => [...prev, { type: 'produtor', text: displayText }]);
+
+    // Chama callback externo se fornecido (passa a mensagem original)
+    if (onSend) {
+      onSend(message, setMessages);
+    }
   };
 
   return (
@@ -27,7 +32,8 @@ const Chat = ({ onBack, onHelp }) => {
         ))}
       </MessagesContainer>
       <ChatInput
-        placeholder="Digite seu CPF aqui"
+        type={inputType}
+        placeholder={placeholder}
         onSend={handleSend}
       />
     </Container>
