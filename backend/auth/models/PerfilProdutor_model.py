@@ -20,7 +20,7 @@ class PerfilProdutor(Base):
     updated_at = mapped_column(TIMESTAMP, server_default='NOW()', onupdate='NOW()')
 
     # Relacionamentos
-    user = relationship("User", backref="perfil_produtor")
+    user = relationship("User", back_populates="perfil_produtor")
     documentos_produtor = relationship("DocumentoProdutor", back_populates="produtor", cascade="all, delete-orphan")
     workflows_documentos = relationship("WorkflowDocumento", back_populates="produtor", cascade="all, delete-orphan")
     itens_producao = relationship("ItemProducao", back_populates="produtor", cascade="all, delete-orphan")
@@ -28,3 +28,4 @@ class PerfilProdutor(Base):
     grupos_fornecedores_membros = relationship("MembroGrupo", back_populates="produtor", cascade="all, delete-orphan")
     confirmacoes = relationship("ConfirmacaoParticipante", back_populates="produtor", cascade="all, delete-orphan")
     reservas_capacidade = relationship("ReservaCapacidade", back_populates="produtor", cascade="all, delete-orphan")
+    alocacoes_grupos = relationship("AlocacaoGrupo", back_populates="produtor", cascade="all, delete-orphan")

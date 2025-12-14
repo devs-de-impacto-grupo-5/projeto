@@ -18,8 +18,8 @@ class ExecucaoMatch(Base):
     criada_por_user_id = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
 
     # Relacionamentos
-    versao_demanda = relationship("VersaoDemanda", backref="execucoes_match")
-    criada_por_user = relationship("User", backref="execucoes_match_criadas")
+    versao_demanda = relationship("VersaoDemanda", back_populates="execucoes_match")
+    criada_por_user = relationship("User", back_populates="execucoes_match_criadas")
     candidatos = relationship("CandidatoMatch", back_populates="execucao_match", cascade="all, delete-orphan")
     grupos_fornecedores = relationship("GrupoFornecedor", back_populates="criado_de_match")
 
@@ -54,7 +54,7 @@ class GrupoFornecedor(Base):
     updated_at = mapped_column(TIMESTAMP, server_default='NOW()', onupdate='NOW()')
 
     # Relacionamentos
-    versao_demanda = relationship("VersaoDemanda", backref="grupos_fornecedores")
+    versao_demanda = relationship("VersaoDemanda", back_populates="grupos_fornecedores")
     criado_de_match = relationship("ExecucaoMatch", back_populates="grupos_fornecedores")
     membros = relationship("MembroGrupo", back_populates="grupo", cascade="all, delete-orphan")
     alocacoes = relationship("AlocacaoGrupo", back_populates="grupo", cascade="all, delete-orphan")
@@ -92,6 +92,5 @@ class AlocacaoGrupo(Base):
     # Relacionamentos
     grupo = relationship("GrupoFornecedor", back_populates="alocacoes")
     item_demanda = relationship("ItemDemanda", back_populates="alocacoes_grupos")
-    produtor = relationship("PerfilProdutor", backref="alocacoes_grupos")
-    produto = relationship("CatalogoProduto", back_populates="alocacoes_grupos")
+    produtor = relationship("PerfilProdutor", back_populates="alocacoes_grupos")
     unidade = relationship("Unidade", back_populates="alocacoes_grupos")

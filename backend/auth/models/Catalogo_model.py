@@ -38,9 +38,16 @@ class CatalogoProduto(Base):
     sinonimos = relationship("SinonymoProduto", back_populates="produto", cascade="all, delete-orphan")
     itens_producao = relationship("ItemProducao", back_populates="produto")
     itens_demanda = relationship("ItemDemanda", back_populates="produto")
-    itens_proposta = relationship("ItemProposta", back_populates="produto")
-    itens_proposta_substituto = relationship("ItemProposta", foreign_keys="ItemProposta.substituto_de_produto_id", back_populates="produto_substituto")
-    alocacoes_grupos = relationship("AlocacaoGrupo", back_populates="produto")
+    itens_proposta = relationship(
+        "ItemProposta",
+        foreign_keys="ItemProposta.produto_id",
+        back_populates="produto"
+    )
+    itens_proposta_substituto = relationship(
+        "ItemProposta",
+        foreign_keys="ItemProposta.substituto_de_produto_id",
+        back_populates="produto_substituto"
+    )
     equivalencias_origem = relationship("SubstitucaoEquivalencia", foreign_keys="SubstitucaoEquivalencia.from_product_id", back_populates="produto_origem")
     equivalencias_destino = relationship("SubstitucaoEquivalencia", foreign_keys="SubstitucaoEquivalencia.to_product_id", back_populates="produto_destino")
 
@@ -73,4 +80,4 @@ class SubstitucaoEquivalencia(Base):
     # Relacionamentos
     produto_origem = relationship("CatalogoProduto", foreign_keys=[from_product_id], back_populates="equivalencias_origem")
     produto_destino = relationship("CatalogoProduto", foreign_keys=[to_product_id], back_populates="equivalencias_destino")
-    aprovado_por = relationship("User", backref="substituicoes_aprovadas")
+    aprovado_por = relationship("User", back_populates="substituicoes_aprovadas")

@@ -25,7 +25,7 @@ class Proposta(Base):
     organizacao = relationship("Organizacao", back_populates="propostas")
     produtor = relationship("PerfilProdutor", back_populates="propostas")
     grupo = relationship("GrupoFornecedor", back_populates="propostas")
-    criada_por_user = relationship("User", backref="propostas_criadas")
+    criada_por_user = relationship("User", back_populates="propostas_criadas")
     itens = relationship("ItemProposta", back_populates="proposta", cascade="all, delete-orphan")
     confirmacoes_participantes = relationship("ConfirmacaoParticipante", back_populates="proposta", cascade="all, delete-orphan")
     reservas_capacidade = relationship("ReservaCapacidade", back_populates="proposta", cascade="all, delete-orphan")

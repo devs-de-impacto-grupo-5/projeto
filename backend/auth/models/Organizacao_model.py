@@ -38,5 +38,5 @@ class UsuarioGoverno(Base):
     updated_at = mapped_column(TIMESTAMP, server_default='NOW()', onupdate='NOW()')
 
     # Relacionamentos
-    user = relationship("User", backref="usuario_governo")
+    user = relationship("User", back_populates="usuario_governo")
     organizacao = relationship("Organizacao", back_populates="usuarios_governo")

@@ -1,11 +1,14 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import List, Literal, Optional
+from pydantic import ConfigDict
 
 
 class Participante(BaseModel):
     """Schema para um participante do grupo informal"""
-    nome: str
+    nome: Optional[str] = None
     cpf: str
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class RegisterFornecedorIndividual(BaseModel):
@@ -81,9 +84,13 @@ class RegisterRequest(BaseModel):
     # Dados específicos por tipo (opcionais conforme o tipo)
     cpf: Optional[str] = None  # Para fornecedor_individual
     participantes: Optional[List[Participante]] = None  # Para grupo_informal
+    # Compatibilidade com payload antigo que enviava apenas lista de CPFs
+    cpfs: Optional[List[str]] = Field(default=None, alias="cpfs")
     cnpj: Optional[str] = None  # Para grupo_formal
     nome_escola: Optional[str] = None  # Para escola
     nome_orgao: Optional[str] = None  # Para governo
     nivel: Optional[Literal["municipal", "estadual", "federal"]] = None  # Para governo
     endereco: Optional[str] = None  # Para escola ou governo
     telefone: Optional[str] = None  # Para escola ou governo
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")

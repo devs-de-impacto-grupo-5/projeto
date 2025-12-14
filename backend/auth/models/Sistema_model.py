@@ -20,7 +20,7 @@ class EventoAuditoria(Base):
     created_at = mapped_column(TIMESTAMP, server_default='NOW()')
 
     # Relacionamentos
-    user = relationship("User", backref="eventos_auditoria")
+    user = relationship("User", back_populates="eventos_auditoria")
 
 
 class Notificacao(Base):
@@ -38,4 +38,4 @@ class Notificacao(Base):
     created_at = mapped_column(TIMESTAMP, server_default='NOW()')
 
     # Relacionamentos
-    user = relationship("User", backref="notificacoes")
+    user = relationship("User", back_populates="notificacoes")

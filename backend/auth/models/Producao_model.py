@@ -42,4 +42,4 @@ class PeriodoCapacidade(Base):
 
     # Relacionamentos
     item_producao = relationship("ItemProducao", back_populates="periodos_capacidade")
-    updated_by_user = relationship("User", backref="periodos_capacidade_atualizados")
+    updated_by_user = relationship("User", back_populates="periodos_capacidade_atualizados")

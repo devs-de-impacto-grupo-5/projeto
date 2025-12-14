@@ -37,7 +37,7 @@ class Arquivo(Base):
     uploaded_at = mapped_column(TIMESTAMP, server_default='NOW()')
 
     # Relacionamentos
-    uploaded_by_user = relationship("User", backref="arquivos_uploadados")
+    uploaded_by_user = relationship("User", back_populates="arquivos_uploadados")
     arquivos_documentos = relationship("ArquivoDocumento", back_populates="arquivo", cascade="all, delete-orphan")
     versoes_demanda = relationship("VersaoDemanda", back_populates="arquivo_original")
     etapas_workflows = relationship("EtapaWorkflow", back_populates="arquivo_evidencia")
@@ -65,7 +65,7 @@ class DocumentoProdutor(Base):
     # Relacionamentos
     produtor = relationship("PerfilProdutor", back_populates="documentos_produtor")
     tipo_documento = relationship("TipoDocumento", back_populates="documentos_produtor")
-    reviewed_by_user = relationship("User", backref="documentos_revisados")
+    reviewed_by_user = relationship("User", back_populates="documentos_revisados")
     arquivos = relationship("ArquivoDocumento", back_populates="documento", cascade="all, delete-orphan")
 
 
@@ -83,7 +83,7 @@ class ArquivoDocumento(Base):
     # Relacionamentos
     documento = relationship("DocumentoProdutor", back_populates="arquivos")
     arquivo = relationship("Arquivo", back_populates="arquivos_documentos")
-    uploaded_by_user = relationship("User", backref="uploads_documentos")
+    uploaded_by_user = relationship("User", back_populates="uploads_documentos")
 
 
 class WorkflowDocumento(Base):
@@ -119,4 +119,4 @@ class EtapaWorkflow(Base):
 
     # Relacionamentos
     workflow = relationship("WorkflowDocumento", back_populates="etapas")
-    arquivo_evidencia = relationship("Arquivo", backref="etapas_workflows")
+    arquivo_evidencia = relationship("Arquivo", back_populates="etapas_workflows")

@@ -47,7 +47,7 @@ class DocumentoUsuario(Base):
     updated_at = mapped_column(TIMESTAMP, server_default='NOW()', onupdate='NOW()')
 
     # Relação com User
-    user = relationship("User", backref="documentos")
+    user = relationship("User", back_populates="documentos")
 
 
 # Mapeamento de documentos requeridos por subtipo de produtor

@@ -18,7 +18,7 @@ class SubmissaoProposta(Base):
 
     # Relacionamentos
     proposta = relationship("Proposta", back_populates="submissao")
-    arquivo_comprovante = relationship("Arquivo", backref="submissoes_propostas")
+    arquivo_comprovante = relationship("Arquivo", back_populates="submissoes_propostas")
     etapas_fisica = relationship("EtapaSubmissaoFisica", back_populates="submissao", cascade="all, delete-orphan")
 
 
@@ -37,4 +37,4 @@ class EtapaSubmissaoFisica(Base):
 
     # Relacionamentos
     submissao = relationship("SubmissaoProposta", back_populates="etapas_fisica")
-    arquivo_evidencia = relationship("Arquivo", backref="etapas_submissao_fisica")
+    arquivo_evidencia = relationship("Arquivo", back_populates="etapas_submissao_fisica")

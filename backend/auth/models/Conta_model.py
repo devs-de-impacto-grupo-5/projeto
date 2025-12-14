@@ -15,7 +15,7 @@ class Escola(Base):
     created_at = mapped_column(TIMESTAMP, server_default='NOW()')
 
     # Relação com User
-    user = relationship("User", backref="escola")
+    user = relationship("User", back_populates="escola")
 
 
 class Governo(Base):
@@ -30,7 +30,7 @@ class Governo(Base):
     created_at = mapped_column(TIMESTAMP, server_default='NOW()')
 
     # Relação com User
-    user = relationship("User", backref="governo")
+    user = relationship("User", back_populates="governo")
 
 
 class Produto(Base):
@@ -47,7 +47,7 @@ class Produto(Base):
     updated_at = mapped_column(TIMESTAMP, server_default='NOW()', onupdate='NOW()')
 
     # Relação com User
-    user = relationship("User", backref="produtos")
+    user = relationship("User", back_populates="produtos")
 
 
 class FornecedorIndividual(Base):
@@ -59,7 +59,7 @@ class FornecedorIndividual(Base):
     created_at = mapped_column(TIMESTAMP, server_default='NOW()')
 
     # Relação com User
-    user = relationship("User", backref="fornecedor_individual")
+    user = relationship("User", back_populates="fornecedor_individual")
 
 
 class GrupoInformal(Base):
@@ -72,7 +72,7 @@ class GrupoInformal(Base):
     created_at = mapped_column(TIMESTAMP, server_default='NOW()')
 
     # Relação com User
-    user = relationship("User", backref="grupo_informal")
+    user = relationship("User", back_populates="grupo_informal")
 
 
 class GrupoFormal(Base):
@@ -84,4 +84,4 @@ class GrupoFormal(Base):
     created_at = mapped_column(TIMESTAMP, server_default='NOW()')
 
     # Relação com User
-    user = relationship("User", backref="grupo_formal")
+    user = relationship("User", back_populates="grupo_formal")

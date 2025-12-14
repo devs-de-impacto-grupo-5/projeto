@@ -115,18 +115,24 @@ async def register(
                 )
 
         elif data.subtipo_usuario == "grupo_informal":
-            if not data.participantes or len(data.participantes) == 0:
+            participantes_payload = data.participantes
+            # compatibilidade: aceitar payload antigo com lista de CPFs
+            if (not participantes_payload or len(participantes_payload) == 0) and data.cpfs:
+                participantes_payload = [{"cpf": cpf} for cpf in data.cpfs]
+
+            if not participantes_payload or len(participantes_payload) == 0:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="Lista de participantes é obrigatória para grupo informal"
                 )
             # Valida que cada participante tem nome e CPF
-            for p in data.participantes:
-                if not p.nome or not p.cpf:
+            for p in participantes_payload:
+                if not p.get("cpf"):
                     raise HTTPException(
                         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                        detail="Cada participante deve ter nome e CPF"
+                        detail="Cada participante deve ter CPF"
                     )
+            data.participantes = [p if isinstance(p, dict) else p.model_dump() for p in participantes_payload]
 
         elif data.subtipo_usuario == "grupo_formal":
             if not data.cnpj:
@@ -212,10 +218,12 @@ async def register(
 
         elif data.subtipo_usuario == "grupo_informal":
             # Converte participantes para lista de dicts para armazenar em JSON
-            participantes_list = [
-                {"nome": p.nome, "cpf": p.cpf}
-                for p in data.participantes
-            ]
+            participantes_list = []
+            for p in data.participantes:
+                participante_dict = {"cpf": p["cpf"]}
+                if p.get("nome"):
+                    participante_dict["nome"] = p["nome"]
+                participantes_list.append(participante_dict)
             conta = GrupoInformal(
                 user_id=new_user.id,
                 participantes=participantes_list

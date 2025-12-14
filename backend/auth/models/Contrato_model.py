@@ -17,7 +17,7 @@ class DecisaoProposta(Base):
 
     # Relacionamentos
     proposta = relationship("Proposta", back_populates="decisoes")
-    decidida_por_user = relationship("User", backref="decisoes_propostas")
+    decidida_por_user = relationship("User", back_populates="decisoes_propostas")
 
 
 class ModeloContrato(Base):
@@ -34,7 +34,7 @@ class ModeloContrato(Base):
 
     # Relacionamentos
     organizacao = relationship("Organizacao", back_populates="modelos_contrato")
-    arquivo_template = relationship("Arquivo", backref="modelos_contrato")
+    arquivo_template = relationship("Arquivo", back_populates="modelos_contrato")
     contratos = relationship("Contrato", back_populates="modelo")
 
 
@@ -57,4 +57,4 @@ class Contrato(Base):
     demanda = relationship("Demanda", back_populates="contratos")
     proposta = relationship("Proposta", back_populates="contratos")
     modelo = relationship("ModeloContrato", back_populates="contratos")
-    arquivo_contrato = relationship("Arquivo", backref="contratos")
+    arquivo_contrato = relationship("Arquivo", back_populates="contratos")

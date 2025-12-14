@@ -22,7 +22,7 @@ class Demanda(Base):
 
     # Relacionamentos
     organizacao = relationship("Organizacao", back_populates="demandas")
-    criada_por_user = relationship("User", backref="demandas_criadas")
+    criada_por_user = relationship("User", back_populates="demandas_criadas")
     versoes = relationship("VersaoDemanda", back_populates="demanda", cascade="all, delete-orphan")
     reservas_capacidade = relationship("ReservaCapacidade", back_populates="demanda", cascade="all, delete-orphan")
     contratos = relationship("Contrato", back_populates="demanda")
@@ -44,8 +44,8 @@ class VersaoDemanda(Base):
 
     # Relacionamentos
     demanda = relationship("Demanda", back_populates="versoes")
-    arquivo_original = relationship("Arquivo", backref="versoes_demanda")
-    criada_por_user = relationship("User", backref="versoes_demanda_criadas")
+    arquivo_original = relationship("Arquivo", back_populates="versoes_demanda")
+    criada_por_user = relationship("User", back_populates="versoes_demanda_criadas")
     itens = relationship("ItemDemanda", back_populates="versao_demanda", cascade="all, delete-orphan")
     requisitos = relationship("RequisitoDemanda", back_populates="versao_demanda", cascade="all, delete-orphan")
     execucoes_match = relationship("ExecucaoMatch", back_populates="versao_demanda")
