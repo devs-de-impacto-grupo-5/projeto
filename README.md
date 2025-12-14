@@ -1,142 +1,134 @@
-# RJ Devs - Sistema de Autenticação e Autorização
+# Vitalis - Sistema de Gestão de Demandas e Produtores
 
-Sistema simples de login e autorização de usuário com FastAPI, PostgreSQL e JWT.
+<div align="center">
+  <img src="imgs/logo-vitalis.png" alt="Logo Vitalis" width="300"/>
+  
+  ![Vitalis](imgs/vitalis.gif)
+</div>
 
-## Estrutura do Projeto
+**Vitalis** é um sistema completo para conectar entidades executoras (escolas, governos) com produtores rurais, facilitando a gestão de demandas de alimentos e produtos agrícolas.
 
-```
-projeto/
-├── backend/
-│   └── auth/          # API de autenticação com FastAPI
-├── frontend/          # Frontend React (a ser implementado)
-├── docker-compose.yml # Configuração dos serviços
-├── .env               # Variáveis de ambiente (local)
-└── .env.example       # Exemplo de variáveis de ambiente
-```
+## 🌐 Aplicação Deployada
 
-## Tecnologias Utilizadas
+A aplicação está disponível em produção nos seguintes links:
 
-- **Backend**: FastAPI + SQLAlchemy + PostgreSQL
+- **API Base**: [https://seu-servico.onrender.com](https://seu-servico.onrender.com)
+- **Documentação Swagger**: [https://seu-servico.onrender.com/docs](https://seu-servico.onrender.com/docs)
+- **Documentação ReDoc**: [https://seu-servico.onrender.com/redoc](https://seu-servico.onrender.com/redoc)
+- **Frontend**: [https://seu-frontend.onrender.com](https://seu-frontend.onrender.com) *(se aplicável)*
+
+> **Nota**: Substitua `seu-servico.onrender.com` pelo domínio real da aplicação deployada.
+
+## 📋 Problema
+
+O sistema foi desenvolvido para resolver a complexidade na gestão de demandas públicas de alimentos e produtos agrícolas, onde:
+
+- **Entidades Executoras** (escolas, governos) precisam criar e gerenciar demandas de produtos
+- **Produtores** (individuais, grupos informais e formais) precisam se cadastrar e oferecer seus produtos
+- É necessário relacionar **múltiplos produtos** de **múltiplos produtores** na mesma demanda
+- O sistema deve validar documentos (CPF/CNPJ) para evitar duplicatas
+- É preciso um motor de matching inteligente para conectar demandas com produtores capazes de suprí-las
+
+## 🎯 Solução Técnica
+
+### Arquitetura
+
+Sistema desenvolvido com **FastAPI** e **PostgreSQL**, seguindo arquitetura RESTful com separação clara de responsabilidades:
+
+- **Backend API**: FastAPI com SQLAlchemy ORM
+- **Banco de Dados**: PostgreSQL com relacionamentos complexos
 - **Autenticação**: JWT (JSON Web Tokens)
 - **Containerização**: Docker + Docker Compose
+- **IA**: Integração com Google Gemini para processamento de editais
+
+### Principais Funcionalidades
+
+1. **Gestão de Usuários**
+   - Cadastro de produtores (individual, grupo informal, grupo formal)
+   - Cadastro de entidades executoras (escola, governo)
+   - Validação de CPF/CNPJ para evitar duplicatas
+   - Autenticação JWT
+
+2. **Gestão de Demandas**
+   - Criação de demandas relacionando múltiplos produtos e produtores
+   - Versionamento de demandas para rastreamento de mudanças
+   - Status de demanda (draft, published, closed, etc.)
+   - Localização de entrega
+
+3. **Catálogo de Produtos**
+   - Catálogo centralizado de produtos
+   - Unidades de medida padronizadas
+   - Gestão de produção dos produtores
+
+4. **Motor de Matching**
+   - Algoritmo inteligente para conectar demandas com produtores
+   - Scoring baseado em múltiplos critérios
+   - Identificação de produtores capazes de suprir demandas
+
+5. **Gestão de Propostas e Contratos**
+   - Sistema de propostas dos produtores
+   - Gestão de contratos
+   - Confirmação de participantes
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Backend**: FastAPI, Python 3.11
+- **Banco de Dados**: PostgreSQL 15
 - **ORM**: SQLAlchemy 2.0
+- **Autenticação**: JWT (python-jose)
+- **IA**: Google Generative AI (Gemini)
+- **Containerização**: Docker, Docker Compose
+- **Validação**: Pydantic
+- **Testes**: Pytest, Pytest-BDD
 
-## Como Começar
+## 🚀 Como Começar (Desenvolvimento Local)
 
-### 1. Pré-requisitos
+### Pré-requisitos
 
 - Docker e Docker Compose instalados
+- Git
 
-### 2. Setup Inicial
+### Instalação
 
 ```bash
+# Clone o repositório
+git clone <url-do-repositorio>
 cd projeto
 
-# Copie as variáveis de ambiente (opcional, já existe .env padrão)
-cp .env.example .env
-```
-
-### 3. Iniciar os Serviços
-
-```bash
-# Inicie os serviços com Docker Compose
+# Inicie os serviços
 docker compose up -d
 
 # Verifique se está tudo rodando
 docker compose ps
 ```
 
-### 4. Acessar a API
+### Acessar a API Local
 
 - **URL Base**: http://localhost:8084
 - **Documentação Swagger**: http://localhost:8084/docs
 - **Documentação ReDoc**: http://localhost:8084/redoc
 
-## Endpoints da API
+## 📁 Estrutura do Projeto
 
-### Autenticação
-
-#### Registrar Usuário
-```bash
-POST /api/auth/registrar
-Content-Type: application/json
-
-{
-  "name": "João Silva",
-  "email": "joao@example.com",
-  "senha": "senha123",
-  "role": "admin"
-}
+```
+projeto/
+├── backend/
+│   └── auth/              # API FastAPI
+│       ├── main.py        # Aplicação principal
+│       ├── models/        # Modelos SQLAlchemy
+│       ├── schemas/       # Schemas Pydantic
+│       ├── routers/       # Rotas da API
+│       ├── services/      # Serviços (match, IA)
+│       ├── db/            # Configuração do banco
+│       └── tests/         # Testes
+├── frontend/              # Frontend React
+├── docker-compose.yml     # Configuração dos serviços
+└── README.md
 ```
 
-**Nota**: O campo `role` é opcional e aceita qualquer string. Se não for fornecido, será `null`.
+## 🔑 Variáveis de Ambiente
 
-#### Login
-```bash
-POST /api/auth/token
-Content-Type: application/x-www-form-urlencoded
-
-username=joao@example.com&password=senha123
-```
-
-Resposta:
-```json
-{
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "token_type": "bearer",
-  "user_id": 1,
-  "role": "admin",
-  "name": "João Silva",
-  "email": "joao@example.com"
-}
-```
-
-#### Listar Usuários
-```bash
-GET /api/auth/usuarios
-```
-
-#### Obter Usuário por ID
-```bash
-GET /api/auth/usuarios/{user_id}
-```
-
-#### Solicitar Redefinição de Senha
-```bash
-POST /api/auth/solicitar-redefinicao-senha
-Content-Type: application/json
-
-{
-  "email": "joao@example.com"
-}
-```
-
-#### Redefinir Senha
-```bash
-POST /api/auth/redefinir-senha
-Content-Type: application/json
-
-{
-  "token": "token-de-redefinicao",
-  "new_password": "nova-senha"
-}
-```
-
-## Roles de Usuário
-
-O campo `role` é completamente flexível e aceita qualquer string. Exemplos:
-
-- `admin` - Administrador
-- `user` - Usuário comum
-- `moderator` - Moderador
-- Qualquer outra string que faça sentido para sua aplicação
-- `null` - Se não fornecer um role
-
-Use a função `require_role("seu_role")` para proteger endpoints específicos.
-
-## Variáveis de Ambiente
-
-Edite o arquivo `.env` na raiz do projeto para configurar:
+Configure as variáveis de ambiente no arquivo `.env`:
 
 ```env
 # Database
@@ -148,94 +140,80 @@ POSTGRES_DB=rj_devs_auth
 SECRET_KEY=sua-chave-secreta-super-segura
 ALGORITHM=HS256
 
-# Email (para reset de senha)
+# Email (opcional)
 EMAIL_FROM=seu-email@gmail.com
 EMAIL_PASSWORD=sua-senha-app
+
+# Google Gemini AI (opcional)
+GEMINI_API_KEY=sua-chave-api
+GEMINI_MODEL_NAME=gemini-pro
 ```
 
-## Comandos Úteis
+## 📚 Principais Endpoints
+
+### Autenticação
+- `POST /register` - Registrar usuário
+- `POST /token` - Login e obter token JWT
+- `POST /validar-usuario` - Validar CPF/CNPJ
+
+### Demandas
+- `POST /demandas` - Criar demanda
+- `GET /demandas` - Listar demandas
+- `GET /demandas/{id}` - Obter demanda específica
+- `GET /demandas/{id}/produtores` - Listar produtores que podem suprir
+
+### Produtos
+- `GET /produtos` - Listar produtos
+- `POST /produtos` - Criar produto
+- `PUT /produtos/{id}` - Atualizar produto
+
+### Produtores
+- `GET /produtores` - Listar produtores
+- `GET /produtores/{id}` - Obter perfil do produtor
+
+## 🧪 Testes
+
+```bash
+# Executar testes
+docker compose exec auth pytest
+
+# Executar testes com coverage
+docker compose exec auth pytest --cov
+```
+
+## 📝 Comandos Úteis
 
 ```bash
 # Ver logs
 docker compose logs -f auth
 
-# Ver logs do PostgreSQL
-docker compose logs -f postgres
-
-# Parar os serviços
+# Parar serviços
 docker compose down
 
-# Parar e remover volumes
-docker compose down -v
-
-# Reconstruir as imagens
+# Reconstruir imagens
 docker compose build --no-cache
 
-# Executar testes (dentro do container)
-docker compose exec auth pytest
+# Acessar banco de dados
+docker compose exec postgres psql -U rj_devs_user -d rj_devs_auth
 ```
 
-## Desenvolvimento
+## 👥 Equipe de Desenvolvimento
 
-### Estrutura do Backend
+| Nome | LinkedIn |
+|------|----------|
+| Maurício Azevedo Neto | [LinkedIn](https://www.linkedin.com/in/mauricio-azevedo-neto/) |
+| Paula Piva | [LinkedIn](https://www.linkedin.com/in/paulapiva03/) |
+| Gabriel Pelinsari | [LinkedIn](https://www.linkedin.com/in/gabriel-pelinsari/) |
+| Matheus Santos | [LinkedIn](https://www.linkedin.com/in/omatheusrsantos/) |
 
-```
-backend/auth/
-├── main.py                # Aplicação principal FastAPI
-├── config.py              # Configurações
-├── requirements.txt       # Dependências Python
-├── models/                # Modelos SQLAlchemy
-│   └── User_model.py
-├── schemas/               # Schemas Pydantic
-│   ├── User_schema.py
-│   └── Password_schema.py
-├── routers/               # Rotas da API
-│   └── Login_routers.py
-├── security/              # Funções de segurança
-│   └── security.py
-├── db/                    # Configuração do banco de dados
-│   ├── base.py
-│   └── db.py
-└── tests/                 # Testes
-```
+## 📄 Licença
 
-### Hot Reload
+Este projeto foi desenvolvido para o Devs Impacto.
 
-O Docker Compose está configurado com volume mount e `--reload` para desenvolvimento:
+## 🤝 Contribuindo
 
-```bash
-# Altere arquivos e eles serão automaticamente recarregados
-# A API estará sempre sincronizada com suas mudanças
-```
+Este é um projeto interno. Para contribuições, entre em contato com a equipe de desenvolvimento.
 
-## Autenticação com JWT
+---
 
-A API usa Bearer tokens (JWT) para autenticação. Para acessar endpoints protegidos:
-
-```bash
-GET /api/auth/usuarios
-Authorization: Bearer <seu-token-aqui>
-```
-
-## Proteção de Rotas com Roles
-
-Para proteger um endpoint com um role específico:
-
-```python
-from fastapi import Depends
-from security.security import require_role
-
-@router.get("/admin-only")
-async def admin_only(current_user: User = Depends(require_role("admin"))):
-    return {"message": f"Bem-vindo {current_user.name}"}
-```
-
-Para verificar múltiplos roles:
-
-```python
-from security.security import require_any_role
-
-@router.get("/staff-area")
-async def staff_area(current_user: User = Depends(require_any_role(["admin", "moderator"]))):
-    return {"message": "Acesso permitido"}
-```
+**Vitalis** - Desenvolvido com ❤️ pela equipe Vitalis

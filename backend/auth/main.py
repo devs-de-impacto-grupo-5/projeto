@@ -17,7 +17,8 @@ from routers import (
     Notificacoes_routers
 )
 from fastapi.security import HTTPBearer
-from db.db import create_tables
+from db.db import create_tables, get_db
+from services.seed_catalog import seed_catalogo
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
@@ -30,15 +31,18 @@ async def lifespan(app: FastAPI):
     print("Creating tables...")
     create_tables()
     print("Tables created.")
+    # Seed catalog on startup
+    try:
+        db = next(get_db())
+        seed_catalogo(db)
+        db.close()
+        print("Catalog seeded.")
+    except Exception as e:
+        print(f"Warning: Could not seed catalog: {e}")
     yield
 
 # Criar uma instância do aplicativo FastAPI
 app = FastAPI(title="Autenticador", version="1.0.0", root_path="/api/auth", lifespan=lifespan)
-
-@app.on_event("startup")
-def startup_event():
-    db = next(get_db())
-    seed_catalogo(db)
 
 # Configuração do esquema de segurança para o Swagger
 security_scheme = HTTPBearer(
