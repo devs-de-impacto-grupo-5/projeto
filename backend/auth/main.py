@@ -86,14 +86,9 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 # Middleware de CORS - Permite qualquer origem
-# Usa função para permitir qualquer origem mesmo com allow_credentials=True
-def allow_all_origins(origin: str) -> bool:
-    """Permite qualquer origem para evitar erros de CORS"""
-    return True
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_func=allow_all_origins,  # Permite qualquer origem via função
+    allow_origins=["*"],  # Permite qualquer origem
     allow_credentials=True,  # Permite credenciais (cookies, headers de auth)
     allow_methods=["*"],  # Permite todos os métodos HTTP (GET, POST, PUT, DELETE, etc.)
     allow_headers=["*"],  # Permite todos os headers
