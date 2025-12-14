@@ -32,6 +32,9 @@ services:
       ALGORITHM: ${ALGORITHM:-HS256}
       EMAIL_FROM: ${EMAIL_FROM:-seu-email@gmail.com}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD:-sua-senha-app-gmail}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL_NAME: ${GEMINI_MODEL_NAME:-}
+      PDF_UPLOAD_DIR: ${PDF_UPLOAD_DIR:-storage/editais}
     depends_on:
       postgres:
         condition: service_healthy

@@ -8,6 +8,11 @@ from routers.Demanda_routers import router as Demanda_routers
 from fastapi.security import HTTPBearer
 from db.db import create_tables
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+
+# Load environment variables from .env before importing modules that rely on them
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
