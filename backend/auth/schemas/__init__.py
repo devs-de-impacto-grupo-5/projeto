@@ -7,6 +7,13 @@ from .Edital_schema import (
     ArquivoProcessado,
     UsuarioProcessamento,
 )
+from .Match_schema import (
+    MatchScoreRequest,
+    MatchScoreResponse,
+    MatchScoreBreakdown,
+    MatchContextInput,
+    CriterionScore,
+)
 
 __all__ = [
     "UserCreate",
@@ -17,4 +24,9 @@ __all__ = [
     "EditalItemPreview",
     "ArquivoProcessado",
     "UsuarioProcessamento",
+    "MatchScoreRequest",
+    "MatchScoreResponse",
+    "MatchScoreBreakdown",
+    "MatchContextInput",
+    "CriterionScore",
 ]
