@@ -13,7 +13,7 @@ const Documentos = () => {
       <Container>
         <Title>Verificação de documentos</Title>
         <Description>
-          Para que você apareça nas oportunidades, precisamos confirmar alguns dados. E rapidinho!
+          Para que você apareça nas oportunidades, precisamos confirmar alguns dados. É rapidinho!
         </Description>
         <EnviarDocumento
           type="enviado"
