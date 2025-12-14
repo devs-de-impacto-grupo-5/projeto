@@ -11,7 +11,9 @@ from schemas.Register_schema import (
     RegisterEscola,
     RegisterGoverno
 )
+from schemas.Validacao_schema import ValidacaoCPFCNPJRequest, ValidacaoCPFCNPJResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func, or_
 from fastapi.security import OAuth2PasswordRequestForm
 from security.security import (
     create_access_token,
@@ -37,40 +39,6 @@ router = APIRouter(tags=["Autenticação"])
 # ----------------------------
 # Endpoints
 # ----------------------------
-
-@router.post("/registrar", status_code=status.HTTP_201_CREATED)
-async def registrar_usuario(
-    user_data: UserCreate,
-    db: Session = Depends(get_db)
-):
-    """Registra um novo usuário no sistema"""
-
-    # Verifica se o email já está cadastrado
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email já cadastrado"
-        )
-
-    # Cria o usuário
-    new_user = User(
-        name=user_data.name,
-        email=user_data.email,
-        senha=user_data.senha,  # Será hasheado no __init__
-        role=user_data.role
-    )
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return {
-        "message": "Usuário criado com sucesso",
-        "user_id": new_user.id
-    }
-
-
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     data: RegisterRequest,
@@ -115,18 +83,27 @@ async def register(
                 )
 
         elif data.subtipo_usuario == "grupo_informal":
-            if not data.participantes or len(data.participantes) == 0:
+            participantes_payload = []
+            if data.participantes:
+                for p in data.participantes:
+                    participantes_payload.append(p if isinstance(p, dict) else p.model_dump())
+            # compatibilidade: aceitar payload antigo com lista de CPFs
+            if (not participantes_payload or len(participantes_payload) == 0) and data.cpfs:
+                participantes_payload = [{"cpf": cpf} for cpf in data.cpfs]
+
+            if not participantes_payload or len(participantes_payload) == 0:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="Lista de participantes é obrigatória para grupo informal"
                 )
             # Valida que cada participante tem nome e CPF
-            for p in data.participantes:
-                if not p.nome or not p.cpf:
+            for p in participantes_payload:
+                if not p.get("cpf"):
                     raise HTTPException(
                         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                        detail="Cada participante deve ter nome e CPF"
+                        detail="Cada participante deve ter CPF"
                     )
+            data.participantes = participantes_payload
 
         elif data.subtipo_usuario == "grupo_formal":
             if not data.cnpj:
@@ -212,10 +189,12 @@ async def register(
 
         elif data.subtipo_usuario == "grupo_informal":
             # Converte participantes para lista de dicts para armazenar em JSON
-            participantes_list = [
-                {"nome": p.nome, "cpf": p.cpf}
-                for p in data.participantes
-            ]
+            participantes_list = []
+            for p in data.participantes:
+                participante_dict = {"cpf": p["cpf"]}
+                if p.get("nome"):
+                    participante_dict["nome"] = p["nome"]
+                participantes_list.append(participante_dict)
             conta = GrupoInformal(
                 user_id=new_user.id,
                 participantes=participantes_list
@@ -251,15 +230,7 @@ async def register(
 
     # Se for produtor, cria documentos pendentes
     if data.tipo_usuario == "produtor":
-        documentos_requeridos = DOCUMENTOS_REQUERIDOS.get(data.subtipo_usuario, [])
-        for doc in documentos_requeridos:
-            documento = DocumentoUsuario(
-                user_id=new_user.id,
-                nome_documento=doc["nome"],
-                descricao=doc["descricao"],
-                status="pending"
-            )
-            db.add(documento)
+        _criar_documentos_pendentes(db, new_user.id, data.subtipo_usuario)
 
     db.commit()
     db.refresh(new_user)
@@ -289,6 +260,24 @@ async def register(
         response["documentos_pendentes"] = documentos_pendentes
 
     return response
+
+
+def _criar_documentos_pendentes(db: Session, user_id: int, subtipo: str) -> None:
+    """
+    Cria registros de documentos obrigatórios com status 'pending' para o produtor.
+    """
+    documentos_requeridos = DOCUMENTOS_REQUERIDOS.get(subtipo, [])
+    docs = [
+        DocumentoUsuario(
+            user_id=user_id,
+            nome_documento=doc["nome"],
+            descricao=doc.get("descricao"),
+            status="pending"
+        )
+        for doc in documentos_requeridos
+    ]
+    if docs:
+        db.add_all(docs)
 
 @router.post("/token")
 async def login_for_access_token(
@@ -402,3 +391,73 @@ async def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
         "email": user.email,
         "role": user.role
     }
+
+
+@router.post("/validar-usuario", response_model=ValidacaoCPFCNPJResponse)
+async def validar_documento(
+    request: ValidacaoCPFCNPJRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Valida se um CPF ou CNPJ já está cadastrado no sistema.
+    
+    Verifica em:
+    - Fornecedores individuais (CPF)
+    - Grupos informais (CPF nos participantes)
+    - Grupos formais (CNPJ)
+    
+    Retorna True se já está cadastrado, False caso contrário.
+    """
+    documento = request.documento.strip()
+    
+    # Detecta se é CPF ou CNPJ baseado no formato
+    # CPF: XXX.XXX.XXX-XX (14 caracteres)
+    # CNPJ: XX.XXX.XXX/XXXX-XX (18 caracteres)
+    is_cpf = len(documento) == 14 and documento.count('.') == 2 and documento.count('-') == 1
+    is_cnpj = len(documento) == 18 and documento.count('.') == 2 and documento.count('/') == 1 and documento.count('-') == 1
+    
+    if not is_cpf and not is_cnpj:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato inválido. Use CPF (XXX.XXX.XXX-XX) ou CNPJ (XX.XXX.XXX/XXXX-XX)"
+        )
+    
+    ja_cadastrado = False
+    
+    if is_cpf:
+        # Verifica em fornecedores individuais
+        fornecedor = db.query(FornecedorIndividual).filter(
+            FornecedorIndividual.cpf == documento
+        ).first()
+        
+        if fornecedor:
+            ja_cadastrado = True
+        else:
+            # Verifica em grupos informais (dentro do JSON de participantes)
+            # Busca grupos informais onde o JSON contém o CPF
+            grupos_informais = db.query(GrupoInformal).all()
+            for grupo in grupos_informais:
+                if grupo.participantes:
+                    # participantes é uma lista de dicts: [{"nome": "...", "cpf": "..."}, ...]
+                    if isinstance(grupo.participantes, list):
+                        for participante in grupo.participantes:
+                            if isinstance(participante, dict) and participante.get("cpf") == documento:
+                                ja_cadastrado = True
+                                break
+                    if ja_cadastrado:
+                        break
+    
+    elif is_cnpj:
+        # Verifica em grupos formais
+        grupo_formal = db.query(GrupoFormal).filter(
+            GrupoFormal.cnpj == documento
+        ).first()
+        
+        if grupo_formal:
+            ja_cadastrado = True
+    
+    return ValidacaoCPFCNPJResponse(
+        ja_cadastrado=ja_cadastrado,
+        documento=documento,
+        tipo="cpf" if is_cpf else "cnpj"
+    )

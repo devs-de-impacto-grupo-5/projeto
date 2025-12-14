@@ -9,9 +9,10 @@ class Demanda(Base):
     __tablename__ = "demandas"
 
     id = mapped_column(Integer, primary_key=True)
-    organizacao_id = mapped_column(Integer, ForeignKey("organizacoes.id"), nullable=False)
+    organizacao_id = mapped_column(Integer, ForeignKey("organizacoes.id"), nullable=True)  # Opcional, pode ser None
     titulo = mapped_column(String(500), nullable=False)
     descricao = mapped_column(Text, nullable=True)
+    quantidade = mapped_column(Integer, nullable=True)  # Quantidade total da demanda
     status = mapped_column(String(50), default='draft', nullable=False)  # draft|published|receiving_proposals|closed|cancelled|contracted
     publicada_em = mapped_column(TIMESTAMP, nullable=True)
     encerra_em = mapped_column(TIMESTAMP, nullable=True)
@@ -22,7 +23,7 @@ class Demanda(Base):
 
     # Relacionamentos
     organizacao = relationship("Organizacao", back_populates="demandas")
-    criada_por_user = relationship("User", backref="demandas_criadas")
+    criada_por_user = relationship("User", back_populates="demandas_criadas")
     versoes = relationship("VersaoDemanda", back_populates="demanda", cascade="all, delete-orphan")
     reservas_capacidade = relationship("ReservaCapacidade", back_populates="demanda", cascade="all, delete-orphan")
     contratos = relationship("Contrato", back_populates="demanda")
@@ -44,8 +45,8 @@ class VersaoDemanda(Base):
 
     # Relacionamentos
     demanda = relationship("Demanda", back_populates="versoes")
-    arquivo_original = relationship("Arquivo", backref="versoes_demanda")
-    criada_por_user = relationship("User", backref="versoes_demanda_criadas")
+    arquivo_original = relationship("Arquivo", back_populates="versoes_demanda")
+    criada_por_user = relationship("User", back_populates="versoes_demanda_criadas")
     itens = relationship("ItemDemanda", back_populates="versao_demanda", cascade="all, delete-orphan")
     requisitos = relationship("RequisitoDemanda", back_populates="versao_demanda", cascade="all, delete-orphan")
     execucoes_match = relationship("ExecucaoMatch", back_populates="versao_demanda")
@@ -54,12 +55,13 @@ class VersaoDemanda(Base):
 
 
 class ItemDemanda(Base):
-    """Itens solicitados em uma demanda"""
+    """Itens solicitados em uma demanda - relaciona demanda, produto e produtor"""
     __tablename__ = "itens_demanda"
 
     id = mapped_column(Integer, primary_key=True)
     versao_demanda_id = mapped_column(Integer, ForeignKey("versoes_demanda.id", ondelete="CASCADE"), nullable=False)
     produto_id = mapped_column(Integer, ForeignKey("catalogo_produtos.id"), nullable=False)
+    user_id = mapped_column(Integer, ForeignKey("users.id"), nullable=False)  # ID do produtor
     unidade_id = mapped_column(Integer, ForeignKey("unidades.id"), nullable=False)
     quantidade = mapped_column(Numeric(10, 2), nullable=False)
     cronograma_entrega_json = mapped_column(JSON, nullable=True)  # parcelas/datas
@@ -69,6 +71,7 @@ class ItemDemanda(Base):
     # Relacionamentos
     versao_demanda = relationship("VersaoDemanda", back_populates="itens")
     produto = relationship("CatalogoProduto", back_populates="itens_demanda")
+    user = relationship("User", foreign_keys=[user_id])  # Relacionamento com o produtor
     unidade = relationship("Unidade", back_populates="itens_demanda")
     itens_proposta = relationship("ItemProposta", back_populates="item_demanda")
     alocacoes_grupos = relationship("AlocacaoGrupo", back_populates="item_demanda")

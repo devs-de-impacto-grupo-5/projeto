@@ -47,7 +47,7 @@ class DocumentoUsuario(Base):
     updated_at = mapped_column(TIMESTAMP, server_default='NOW()', onupdate='NOW()')
 
     # Relação com User
-    user = relationship("User", backref="documentos")
+    user = relationship("User", back_populates="documentos")
 
 
 # Mapeamento de documentos requeridos por subtipo de produtor
@@ -82,17 +82,17 @@ DOCUMENTOS_REQUERIDOS = {
             "descricao": "Declaração de produção própria"
         },
         {
-            "nome": "Requisitos Higiênico-Sanitários",
+            "nome": "Sanitário",
             "descricao": "Prova de requisitos higiênico-sanitários (se for o caso)"
         }
     ],
     "grupo_informal": [
         {
-            "nome": "CPF dos Participantes",
+            "nome": "CPF (de cada participante)",
             "descricao": "Cópia do CPF de cada participante"
         },
         {
-            "nome": "DAP Física",
+            "nome": "DAP Física (de cada participante)",
             "descricao": "Extrato da DAP Física de cada participante (últimos 60 dias)"
         },
         {
@@ -116,7 +116,7 @@ DOCUMENTOS_REQUERIDOS = {
             "descricao": "Declaração de que é produzido pelos participantes listados"
         },
         {
-            "nome": "Requisitos Higiênico-Sanitários",
+            "nome": "Sanitário",
             "descricao": "Prova de requisitos higiênico-sanitários (se for o caso)"
         }
     ],
@@ -135,7 +135,7 @@ DOCUMENTOS_REQUERIDOS = {
         },
         {
             "nome": "Certidões Negativas Estadual/Municipal",
-            "descricao": "Certidões Negativas da sede"
+            "descricao": "Certidões Negativas do domicílio/sede"
         },
         {
             "nome": "CNDT",
@@ -162,7 +162,7 @@ DOCUMENTOS_REQUERIDOS = {
             "descricao": "Declaração de controle do limite individual de venda"
         },
         {
-            "nome": "Requisitos Higiênico-Sanitários",
+            "nome": "Sanitário",
             "descricao": "Prova de requisitos higiênico-sanitários (se for o caso)"
         }
     ]

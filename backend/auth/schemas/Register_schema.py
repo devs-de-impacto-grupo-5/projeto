@@ -1,11 +1,14 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import List, Literal, Optional
+from pydantic import ConfigDict
 
 
 class Participante(BaseModel):
     """Schema para um participante do grupo informal"""
-    nome: str
+    nome: Optional[str] = None
     cpf: str
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class RegisterFornecedorIndividual(BaseModel):
@@ -81,9 +84,71 @@ class RegisterRequest(BaseModel):
     # Dados específicos por tipo (opcionais conforme o tipo)
     cpf: Optional[str] = None  # Para fornecedor_individual
     participantes: Optional[List[Participante]] = None  # Para grupo_informal
+    # Compatibilidade com payload antigo que enviava apenas lista de CPFs
+    cpfs: Optional[List[str]] = Field(default=None, alias="cpfs")
     cnpj: Optional[str] = None  # Para grupo_formal
     nome_escola: Optional[str] = None  # Para escola
     nome_orgao: Optional[str] = None  # Para governo
     nivel: Optional[Literal["municipal", "estadual", "federal"]] = None  # Para governo
     endereco: Optional[str] = None  # Para escola ou governo
     telefone: Optional[str] = None  # Para escola ou governo
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="ignore",
+        json_schema_extra={
+            "examples": [
+                {
+                    "tipo_usuario": "produtor",
+                    "subtipo_usuario": "fornecedor_individual",
+                    "name": "João Silva",
+                    "email": "joao.silva@example.com",
+                    "senha": "senha123",
+                    "cpf": "123.456.789-10",
+                    "latitude": -22.9068,
+                    "longitude": -43.1729
+                },
+                {
+                    "tipo_usuario": "produtor",
+                    "subtipo_usuario": "grupo_informal",
+                    "name": "Grupo Informal ABC",
+                    "email": "grupo.informal@example.com",
+                    "senha": "senha123",
+                    "participantes": [
+                        {"nome": "João Silva", "cpf": "111.111.111-11"},
+                        {"nome": "Maria Santos", "cpf": "222.222.222-22"},
+                        {"nome": "Pedro Costa", "cpf": "333.333.333-33"}
+                    ]
+                },
+                {
+                    "tipo_usuario": "produtor",
+                    "subtipo_usuario": "grupo_formal",
+                    "name": "Associação de Produtores XYZ",
+                    "email": "assoc@example.com",
+                    "senha": "senha123",
+                    "cnpj": "12.345.678/0001-99"
+                },
+                {
+                    "tipo_usuario": "entidade_executora",
+                    "subtipo_usuario": "escola",
+                    "name": "Escola Estadual Exemplo",
+                    "email": "escola@example.com",
+                    "senha": "senha123",
+                    "nome_escola": "Escola Estadual ABC",
+                    "endereco": "Rua das Flores, 123",
+                    "telefone": "(21) 3333-4444"
+                },
+                {
+                    "tipo_usuario": "entidade_executora",
+                    "subtipo_usuario": "governo",
+                    "name": "Secretaria Municipal",
+                    "email": "governo@example.com",
+                    "senha": "senha123",
+                    "nome_orgao": "Secretaria Municipal de Agricultura",
+                    "nivel": "municipal",
+                    "endereco": "Av. Principal, 456",
+                    "telefone": "(21) 3333-5555"
+                }
+            ]
+        },
+    )
