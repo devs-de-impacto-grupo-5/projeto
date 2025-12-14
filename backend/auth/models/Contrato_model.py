@@ -58,3 +58,5 @@ class Contrato(Base):
     proposta = relationship("Proposta", back_populates="contratos")
     modelo = relationship("ModeloContrato", back_populates="contratos")
     arquivo_contrato = relationship("Arquivo", back_populates="contratos")
+    registro_blockchain = relationship("RegistroBlockchain", back_populates="contrato", uselist=False)
+

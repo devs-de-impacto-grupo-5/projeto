@@ -442,6 +442,39 @@ async def listar_produtores_capacidade(
     
     # Ordena por percentual de cobertura (maior primeiro)
     resultado.sort(key=lambda x: x.percentual_cobertura, reverse=True)
-    
+
     return resultado
+
+
+@router.get("/diagnostico/catalogo", tags=["Diagnóstico"])
+async def diagnostico_catalogo(db: Session = Depends(get_db)):
+    """
+    Endpoint de diagnóstico para verificar produtos no catálogo.
+    """
+    produtos = db.query(CatalogoProduto).all()
+    unidades = db.query(Unidade).all()
+
+    return {
+        "total_produtos": len(produtos),
+        "total_unidades": len(unidades),
+        "produtos": [
+            {
+                "id": p.id,
+                "nome": p.nome,
+                "categoria": p.categoria,
+                "unidade_padrao_id": p.unidade_padrao_id,
+                "ativo": p.ativo
+            }
+            for p in produtos
+        ],
+        "unidades": [
+            {
+                "id": u.id,
+                "codigo": u.codigo,
+                "nome": u.nome,
+                "tipo": u.tipo
+            }
+            for u in unidades
+        ]
+    }
 
