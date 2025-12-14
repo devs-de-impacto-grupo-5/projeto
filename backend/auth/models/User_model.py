@@ -27,7 +27,14 @@ class User(Base):
     longitude = mapped_column(Float, nullable=True)
 
     role = mapped_column(String(100), nullable=True)  # Kept for backward compatibility
+
+    # Novos campos para MVP
+    status = mapped_column(String(50), default='active', nullable=False)  # active|disabled|pending_verification
+    phone = mapped_column(String(20), nullable=True)
+    last_login_at = mapped_column(TIMESTAMP, nullable=True)
+
     created_at = mapped_column(TIMESTAMP, server_default='NOW()')
+    updated_at = mapped_column(TIMESTAMP, server_default='NOW()', onupdate='NOW()')
 
     def __init__(self, **kwargs):
         if 'senha' in kwargs:
