@@ -228,15 +228,7 @@ async def register(
 
     # Se for produtor, cria documentos pendentes
     if data.tipo_usuario == "produtor":
-        documentos_requeridos = DOCUMENTOS_REQUERIDOS.get(data.subtipo_usuario, [])
-        for doc in documentos_requeridos:
-            documento = DocumentoUsuario(
-                user_id=new_user.id,
-                nome_documento=doc["nome"],
-                descricao=doc["descricao"],
-                status="pending"
-            )
-            db.add(documento)
+        _criar_documentos_pendentes(db, new_user.id, data.subtipo_usuario)
 
     db.commit()
     db.refresh(new_user)
@@ -266,6 +258,24 @@ async def register(
         response["documentos_pendentes"] = documentos_pendentes
 
     return response
+
+
+def _criar_documentos_pendentes(db: Session, user_id: int, subtipo: str) -> None:
+    """
+    Cria registros de documentos obrigatórios com status 'pending' para o produtor.
+    """
+    documentos_requeridos = DOCUMENTOS_REQUERIDOS.get(subtipo, [])
+    docs = [
+        DocumentoUsuario(
+            user_id=user_id,
+            nome_documento=doc["nome"],
+            descricao=doc.get("descricao"),
+            status="pending"
+        )
+        for doc in documentos_requeridos
+    ]
+    if docs:
+        db.add_all(docs)
 
 @router.post("/token")
 async def login_for_access_token(
