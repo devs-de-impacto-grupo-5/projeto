@@ -29,31 +29,19 @@ async def criar_demanda(
     db: Session = Depends(get_db)
 ):
     """
-    Cria uma nova demanda com seus itens (produtos necessários).
-    Uma demanda pode ser suprida por N produtos de N produtores.
+    Cria uma nova demanda relacionando múltiplos produtos e múltiplos produtores.
+    
+    Permite relacionar N produtos de N produtores na mesma demanda.
+    Exemplo: demanda 1, usuário 1 (produtor), produto 1; demanda 1, usuário 2 (produtor), produto 3, quantidade 500.
     
     Requer autenticação via token JWT.
-    O user_id deve ser de um usuário do tipo 'entidade_executora'.
+    Cada user_id nos itens deve ser de um usuário do tipo 'produtor'.
     """
-    # Verifica se o usuário existe e é do tipo entidade_executora
-    entidade_user = db.query(User).filter(
-        User.id == demanda_data.user_id
-    ).first()
+    # Valida produtos, unidades e produtores
+    produtores_validados = {}
     
-    if not entidade_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuário não encontrado"
-        )
-    
-    if entidade_user.tipo_usuario != "entidade_executora":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"O usuário deve ser do tipo 'entidade_executora'. Tipo atual: {entidade_user.tipo_usuario}"
-        )
-    
-    # Verifica se os produtos e unidades existem
     for item in demanda_data.itens:
+        # Valida produto
         produto = db.query(CatalogoProduto).filter(
             CatalogoProduto.id == item.produto_id
         ).first()
@@ -63,12 +51,31 @@ async def criar_demanda(
                 detail=f"Produto com ID {item.produto_id} não encontrado no catálogo"
             )
         
+        # Valida unidade
         unidade = db.query(Unidade).filter(Unidade.id == item.unidade_id).first()
         if not unidade:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Unidade com ID {item.unidade_id} não encontrada"
             )
+        
+        # Valida que o user_id é de um produtor (cache para evitar consultas repetidas)
+        if item.user_id not in produtores_validados:
+            produtor_user = db.query(User).filter(User.id == item.user_id).first()
+            
+            if not produtor_user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Usuário com ID {item.user_id} não encontrado"
+                )
+            
+            if produtor_user.tipo_usuario != "produtor":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"O usuário com ID {item.user_id} deve ser do tipo 'produtor'. Tipo atual: {produtor_user.tipo_usuario}"
+                )
+            
+            produtores_validados[item.user_id] = produtor_user
     
     # Cria a demanda
     local_entrega_json = None
@@ -76,14 +83,14 @@ async def criar_demanda(
         local_entrega_json = demanda_data.local_entrega.model_dump()
     
     nova_demanda = Demanda(
-        organizacao_id=None,  # Não usa organização, usa user_id diretamente
+        organizacao_id=None,  # Não usa organização
         titulo=demanda_data.titulo,
         descricao=demanda_data.descricao,
         quantidade=demanda_data.quantidade,
         status='draft',
         encerra_em=demanda_data.encerra_em,
         local_entrega_json=local_entrega_json,
-        criada_por_user_id=demanda_data.user_id  # Usa o user_id da entidade executora
+        criada_por_user_id=current_user.id  # Usa o usuário autenticado que está criando
     )
     
     db.add(nova_demanda)
@@ -100,11 +107,12 @@ async def criar_demanda(
     db.add(versao)
     db.flush()
     
-    # Cria os itens da demanda
+    # Cria os itens da demanda (relacionando produto e produtor)
     for item_data in demanda_data.itens:
         item = ItemDemanda(
             versao_demanda_id=versao.id,
             produto_id=item_data.produto_id,
+            user_id=item_data.user_id,  # ID do produtor
             unidade_id=item_data.unidade_id,
             quantidade=item_data.quantidade,
             cronograma_entrega_json=item_data.cronograma_entrega_json,
@@ -128,10 +136,13 @@ async def criar_demanda(
             CatalogoProduto.id == item.produto_id
         ).first()
         unidade = db.query(Unidade).filter(Unidade.id == item.unidade_id).first()
+        produtor_user = db.query(User).filter(User.id == item.user_id).first()
         
         itens_response.append(ItemDemandaResponse(
             id=item.id,
             produto_id=item.produto_id,
+            user_id=item.user_id,
+            user_nome=produtor_user.name if produtor_user else None,
             unidade_id=item.unidade_id,
             quantidade=item.quantidade,
             cronograma_entrega_json=item.cronograma_entrega_json,
@@ -144,8 +155,6 @@ async def criar_demanda(
     return DemandaResponse(
         id=nova_demanda.id,
         organizacao_id=nova_demanda.organizacao_id,
-        user_id=demanda_data.user_id,
-        user_nome=entidade_user.name,
         titulo=nova_demanda.titulo,
         descricao=nova_demanda.descricao,
         quantidade=nova_demanda.quantidade,
@@ -194,10 +203,13 @@ async def obter_demanda(
                 CatalogoProduto.id == item.produto_id
             ).first()
             unidade = db.query(Unidade).filter(Unidade.id == item.unidade_id).first()
+            produtor_user = db.query(User).filter(User.id == item.user_id).first()
             
             itens_response.append(ItemDemandaResponse(
                 id=item.id,
                 produto_id=item.produto_id,
+                user_id=item.user_id,
+                user_nome=produtor_user.name if produtor_user else None,
                 unidade_id=item.unidade_id,
                 quantidade=item.quantidade,
                 cronograma_entrega_json=item.cronograma_entrega_json,
@@ -207,14 +219,9 @@ async def obter_demanda(
                 unidade_nome=unidade.nome if unidade else None
             ))
     
-    # Busca informações do usuário entidade executora
-    entidade_user = db.query(User).filter(User.id == demanda.criada_por_user_id).first()
-    
     return DemandaResponse(
         id=demanda.id,
         organizacao_id=demanda.organizacao_id,
-        user_id=demanda.criada_por_user_id,
-        user_nome=entidade_user.name if entidade_user else None,
         titulo=demanda.titulo,
         descricao=demanda.descricao,
         quantidade=demanda.quantidade,
@@ -267,10 +274,13 @@ async def listar_demandas(
                     CatalogoProduto.id == item.produto_id
                 ).first()
                 unidade = db.query(Unidade).filter(Unidade.id == item.unidade_id).first()
+                produtor_user = db.query(User).filter(User.id == item.user_id).first()
                 
                 itens_response.append(ItemDemandaResponse(
                     id=item.id,
                     produto_id=item.produto_id,
+                    user_id=item.user_id,
+                    user_nome=produtor_user.name if produtor_user else None,
                     unidade_id=item.unidade_id,
                     quantidade=item.quantidade,
                     cronograma_entrega_json=item.cronograma_entrega_json,
@@ -280,14 +290,9 @@ async def listar_demandas(
                     unidade_nome=unidade.nome if unidade else None
                 ))
         
-        # Busca informações do usuário entidade executora
-        entidade_user = db.query(User).filter(User.id == demanda.criada_por_user_id).first()
-        
         result.append(DemandaResponse(
             id=demanda.id,
             organizacao_id=demanda.organizacao_id,
-            user_id=demanda.criada_por_user_id,
-            user_nome=entidade_user.name if entidade_user else None,
             titulo=demanda.titulo,
             descricao=demanda.descricao,
             quantidade=demanda.quantidade,

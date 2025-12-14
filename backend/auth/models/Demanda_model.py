@@ -55,12 +55,13 @@ class VersaoDemanda(Base):
 
 
 class ItemDemanda(Base):
-    """Itens solicitados em uma demanda"""
+    """Itens solicitados em uma demanda - relaciona demanda, produto e produtor"""
     __tablename__ = "itens_demanda"
 
     id = mapped_column(Integer, primary_key=True)
     versao_demanda_id = mapped_column(Integer, ForeignKey("versoes_demanda.id", ondelete="CASCADE"), nullable=False)
     produto_id = mapped_column(Integer, ForeignKey("catalogo_produtos.id"), nullable=False)
+    user_id = mapped_column(Integer, ForeignKey("users.id"), nullable=False)  # ID do produtor
     unidade_id = mapped_column(Integer, ForeignKey("unidades.id"), nullable=False)
     quantidade = mapped_column(Numeric(10, 2), nullable=False)
     cronograma_entrega_json = mapped_column(JSON, nullable=True)  # parcelas/datas
@@ -70,6 +71,7 @@ class ItemDemanda(Base):
     # Relacionamentos
     versao_demanda = relationship("VersaoDemanda", back_populates="itens")
     produto = relationship("CatalogoProduto", back_populates="itens_demanda")
+    user = relationship("User", foreign_keys=[user_id])  # Relacionamento com o produtor
     unidade = relationship("Unidade", back_populates="itens_demanda")
     itens_proposta = relationship("ItemProposta", back_populates="item_demanda")
     alocacoes_grupos = relationship("AlocacaoGrupo", back_populates="item_demanda")

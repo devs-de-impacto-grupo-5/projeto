@@ -6,8 +6,9 @@ from decimal import Decimal
 
 
 class ItemDemandaCreate(BaseModel):
-    """Schema para criar um item de demanda"""
+    """Schema para criar um item de demanda - relaciona produto e produtor"""
     produto_id: int = Field(..., description="ID do produto do catálogo")
+    user_id: int = Field(..., description="ID do usuário produtor que irá fornecer este produto")
     unidade_id: int = Field(..., description="ID da unidade de medida")
     quantidade: Decimal = Field(..., gt=0, description="Quantidade necessária")
     cronograma_entrega_json: Optional[Dict[str, Any]] = Field(
@@ -28,12 +29,16 @@ class LocalEntrega(BaseModel):
 
 
 class DemandaCreate(BaseModel):
-    """Schema para criar uma demanda"""
-    user_id: int = Field(..., description="ID do usuário do tipo entidade_executora que está criando a demanda")
+    """Schema para criar uma demanda
+    
+    Permite relacionar múltiplos produtos e múltiplos produtores na mesma demanda.
+    Cada item relaciona um produto com um produtor específico.
+    Exemplo: demanda 1, usuário 1 (produtor), produto 1; demanda 1, usuário 2 (produtor), produto 3, quantidade 500.
+    """
     titulo: str = Field(..., min_length=1, max_length=500, description="Título da demanda")
     descricao: Optional[str] = Field(None, description="Descrição detalhada da demanda")
     quantidade: Optional[int] = Field(None, gt=0, description="Quantidade total da demanda (opcional)")
-    itens: List[ItemDemandaCreate] = Field(..., min_items=1, description="Lista de itens/produtos necessários")
+    itens: List[ItemDemandaCreate] = Field(..., min_items=1, description="Lista de itens relacionando produtos e produtores")
     encerra_em: Optional[datetime] = Field(None, description="Data/hora de encerramento da demanda")
     local_entrega: Optional[LocalEntrega] = Field(None, description="Local de entrega")
     
@@ -41,20 +46,21 @@ class DemandaCreate(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "user_id": 1,
                     "titulo": "Demanda de Alimentos para Merenda Escolar - Janeiro 2025",
                     "descricao": "Demanda de produtos alimentícios para merenda escolar do mês de janeiro",
                     "quantidade": 1500,
                     "itens": [
                         {
                             "produto_id": 1,
+                            "user_id": 1,
                             "unidade_id": 1,
                             "quantidade": "1000.00",
                             "preco_maximo": "5.50",
                             "observacoes": "Arroz tipo 1, preferencialmente orgânico"
                         },
                         {
-                            "produto_id": 2,
+                            "produto_id": 3,
+                            "user_id": 2,
                             "unidade_id": 2,
                             "quantidade": "500.00",
                             "preco_maximo": "8.00",
@@ -78,6 +84,8 @@ class ItemDemandaResponse(BaseModel):
     """Schema de resposta para item de demanda"""
     id: int
     produto_id: int
+    user_id: int = Field(..., description="ID do produtor")
+    user_nome: Optional[str] = Field(None, description="Nome do produtor")
     unidade_id: int
     quantidade: Decimal
     cronograma_entrega_json: Optional[Dict[str, Any]] = None
@@ -93,8 +101,6 @@ class DemandaResponse(BaseModel):
     """Schema de resposta para demanda"""
     id: int
     organizacao_id: Optional[int] = None
-    user_id: int = Field(..., description="ID do usuário entidade executora")
-    user_nome: Optional[str] = Field(None, description="Nome do usuário entidade executora")
     titulo: str
     descricao: Optional[str] = None
     quantidade: Optional[int] = None
@@ -102,7 +108,7 @@ class DemandaResponse(BaseModel):
     publicada_em: Optional[datetime] = None
     encerra_em: Optional[datetime] = None
     local_entrega_json: Optional[Dict[str, Any]] = None
-    criada_por_user_id: int
+    criada_por_user_id: int = Field(..., description="ID do usuário que criou a demanda")
     created_at: datetime
     updated_at: datetime
     versao_atual: Optional[int] = None

@@ -296,11 +296,13 @@ CREATE TABLE IF NOT EXISTS itens_demanda (
     id SERIAL PRIMARY KEY,
     versao_demanda_id INTEGER NOT NULL REFERENCES versoes_demanda(id) ON DELETE CASCADE,
     produto_id INTEGER NOT NULL REFERENCES catalogo_produtos(id),
+    user_id INTEGER NOT NULL REFERENCES users(id),  -- ID do produtor que irá fornecer este produto
     unidade_id INTEGER NOT NULL REFERENCES unidades(id),
     quantidade NUMERIC(10, 2) NOT NULL,
     cronograma_entrega_json JSONB,
     preco_maximo NUMERIC(10, 2),
-    observacoes TEXT
+    observacoes TEXT,
+    UNIQUE(versao_demanda_id, produto_id, user_id)  -- Evita duplicatas: mesmo produto e produtor na mesma versão
 );
 
 CREATE TABLE IF NOT EXISTS requisitos_demanda (
@@ -542,6 +544,7 @@ CREATE INDEX IF NOT EXISTS idx_demandas_encerra_em ON demandas(encerra_em);
 CREATE INDEX IF NOT EXISTS idx_versoes_dem_demanda_id ON versoes_demanda(demanda_id);
 CREATE INDEX IF NOT EXISTS idx_itens_dem_versao_id ON itens_demanda(versao_demanda_id);
 CREATE INDEX IF NOT EXISTS idx_itens_dem_produto_id ON itens_demanda(produto_id);
+CREATE INDEX IF NOT EXISTS idx_itens_dem_user_id ON itens_demanda(user_id);
 CREATE INDEX IF NOT EXISTS idx_req_dem_versao_id ON requisitos_demanda(versao_demanda_id);
 CREATE INDEX IF NOT EXISTS idx_exec_match_versao_id ON execucoes_match(versao_demanda_id);
 CREATE INDEX IF NOT EXISTS idx_exec_match_status ON execucoes_match(status);
