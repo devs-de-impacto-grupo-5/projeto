@@ -10,7 +10,7 @@ from pathlib import Path
 # Adiciona o diretório auth ao path para imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from database.database import SessionLocal
+from db.db import get_session_local, create_tables
 from services.seed_catalog import seed_catalogo
 
 def main():
@@ -18,6 +18,11 @@ def main():
     print("Populando catálogo de produtos...")
     print("=" * 50)
 
+    # Create tables first
+    create_tables()
+    
+    # Get SessionLocal and create a session
+    SessionLocal = get_session_local()
     db = SessionLocal()
     try:
         seed_catalogo(db)
