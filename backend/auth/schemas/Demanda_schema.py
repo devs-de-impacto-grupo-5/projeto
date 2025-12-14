@@ -112,6 +112,7 @@ class DemandaResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     versao_atual: Optional[int] = None
+    versao_atual_id: Optional[int] = None
     itens: List[ItemDemandaResponse] = []
 
     model_config = {"from_attributes": True}

@@ -392,6 +392,12 @@ def _build_proposta_response(proposta: Proposta, db: Session) -> PropostaRespons
             created_at=item.created_at
         ))
 
+    produtor_nome = None
+    if proposta.produtor_id:
+        produtor = db.query(PerfilProdutor).filter(PerfilProdutor.id == proposta.produtor_id).first()
+        if produtor and produtor.user:
+            produtor_nome = produtor.user.name
+
     return PropostaResponse(
         id=proposta.id,
         versao_demanda_id=proposta.versao_demanda_id,
@@ -404,6 +410,7 @@ def _build_proposta_response(proposta: Proposta, db: Session) -> PropostaRespons
         criada_por_user_id=proposta.criada_por_user_id,
         created_at=proposta.created_at,
         updated_at=proposta.updated_at,
+        produtor_nome=produtor_nome,
         itens=itens_response
     )
 

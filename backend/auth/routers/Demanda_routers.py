@@ -236,6 +236,7 @@ async def obter_demanda(
         created_at=demanda.created_at,
         updated_at=demanda.updated_at,
         versao_atual=versao.numero_versao if versao else None,
+        versao_atual_id=versao.id if versao else None,
         itens=itens_response
     )
 

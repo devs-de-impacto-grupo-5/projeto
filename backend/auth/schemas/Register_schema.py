@@ -91,6 +91,9 @@ class RegisterRequest(BaseModel):
     nome_orgao: Optional[str] = None  # Para governo
     nivel: Optional[Literal["municipal", "estadual", "federal"]] = None  # Para governo
     endereco: Optional[str] = None  # Para escola ou governo
+    numero: Optional[str] = None
+    cidade: Optional[str] = None
+    uf: Optional[str] = None
     telefone: Optional[str] = None  # Para escola ou governo
 
     model_config = ConfigDict(
