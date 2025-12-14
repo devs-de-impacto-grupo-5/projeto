@@ -12,12 +12,9 @@
 
 A aplicação está disponível em produção nos seguintes links:
 
-- **API Base**: [https://seu-servico.onrender.com](https://seu-servico.onrender.com)
-- **Documentação Swagger**: [https://seu-servico.onrender.com/docs](https://seu-servico.onrender.com/docs)
-- **Documentação ReDoc**: [https://seu-servico.onrender.com/redoc](https://seu-servico.onrender.com/redoc)
+- **API Base**: [https://rj-devs-impacto-api.onrender.com](https://rj-devs-impacto-api.onrender.com)
+- **Documentação Swagger**: [https://rj-devs-impacto-api.onrender.com/docs](https://rj-devs-impacto-api.onrender.com/docs)
 - **Frontend**: [https://seu-frontend.onrender.com](https://seu-frontend.onrender.com) *(se aplicável)*
-
-> **Nota**: Substitua `seu-servico.onrender.com` pelo domínio real da aplicação deployada.
 
 ## 📋 Problema
 
