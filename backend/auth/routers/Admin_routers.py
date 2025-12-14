@@ -1,9 +1,12 @@
 # routers/Admin_routers.py
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
 from datetime import datetime, timedelta
+import csv
+import io
 
 from schemas.Admin_schema import (
     SubstituicaoEquivalenciaCreate,
@@ -12,12 +15,13 @@ from schemas.Admin_schema import (
     UsuarioAdminResponse,
     UsuarioAdminUpdate,
     EventoAuditoriaResponse,
-    RelatorioSistemaResponse
+    RelatorioSistemaResponse,
+    DashboardEditalResponse
 )
 from models.Catalogo_model import SubstitucaoEquivalencia, CatalogoProduto
 from models.User_model import User
 from models.Organizacao_model import Organizacao
-from models.Demanda_model import Demanda
+from models.Demanda_model import Demanda, VersaoDemanda
 from models.Proposta_model import Proposta
 from models.Contrato_model import Contrato
 from models.Auditoria_model import EventoAuditoria
@@ -54,6 +58,7 @@ async def listar_usuarios(
         tipo_usuario=u.tipo_usuario,
         subtipo_usuario=u.subtipo_usuario,
         status=u.status,
+        role=u.role,
         created_at=u.created_at,
         last_login_at=u.last_login_at
     ) for u in usuarios]
@@ -85,6 +90,7 @@ async def atualizar_usuario(
         tipo_usuario=usuario.tipo_usuario,
         subtipo_usuario=usuario.subtipo_usuario,
         status=usuario.status,
+        role=usuario.role,
         created_at=usuario.created_at,
         last_login_at=usuario.last_login_at
     )
@@ -228,6 +234,142 @@ async def obter_relatorio_sistema(
         propostas_criadas_ultimos_30_dias=propostas_criadas,
         contratos_assinados_ultimos_30_dias=contratos_assinados
     )
+
+
+@router.get("/relatorio/download")
+async def baixar_relatorio_editais(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Gera e baixa um relatório CSV dos editais"""
+    demandas = db.query(Demanda).order_by(Demanda.created_at.desc()).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Cabeçalho do CSV
+    writer.writerow(['ID', 'Título', 'Status', 'Data Criação', 'Quantidade Total', 'Candidatos'])
+    
+    for demanda in demandas:
+        # Busca contagem de candidatos
+        versao = db.query(VersaoDemanda).filter(
+            VersaoDemanda.demanda_id == demanda.id
+        ).order_by(VersaoDemanda.numero_versao.desc()).first()
+        
+        candidatos_count = 0
+        if versao:
+            candidatos_count = db.query(Proposta).filter(
+                Proposta.versao_demanda_id == versao.id
+            ).count()
+            
+        writer.writerow([
+            demanda.id,
+            demanda.titulo,
+            demanda.status,
+            demanda.created_at.strftime("%d/%m/%Y"),
+            demanda.quantidade or 0,
+            candidatos_count
+        ])
+    
+    output.seek(0)
+    
+    response = StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv"
+    )
+    response.headers["Content-Disposition"] = "attachment; filename=relatorio_editais.csv"
+    return response
+
+
+@router.get("/editais/{demanda_id}/download")
+async def baixar_detalhes_edital(
+    demanda_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Gera CSV com detalhes do edital e candidatos"""
+    demanda = db.query(Demanda).filter(Demanda.id == demanda_id).first()
+    if not demanda:
+        raise HTTPException(status_code=404, detail="Edital não encontrado")
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Cabeçalho do Edital
+    writer.writerow(["Detalhes do Edital"])
+    writer.writerow(["ID", "Título", "Status", "Data Criação", "Descrição"])
+    writer.writerow([
+        demanda.id,
+        demanda.titulo,
+        demanda.status,
+        demanda.created_at.strftime("%d/%m/%Y"),
+        demanda.descricao
+    ])
+    writer.writerow([])
+    
+    # Candidatos
+    writer.writerow(["Candidatos"])
+    writer.writerow(["ID Proposta", "Produtor", "Status", "Valor", "Data Proposta"])
+    
+    versao = db.query(VersaoDemanda).filter(
+        VersaoDemanda.demanda_id == demanda.id
+    ).order_by(VersaoDemanda.numero_versao.desc()).first()
+    
+    if versao:
+        propostas = db.query(Proposta).filter(
+            Proposta.versao_demanda_id == versao.id
+        ).all()
+        
+        for proposta in propostas:
+            produtor = db.query(User).filter(User.id == proposta.produtor_id).first()
+            writer.writerow([
+                proposta.id,
+                produtor.name if produtor else "Desconhecido",
+                proposta.status,
+                proposta.valor_total,
+                proposta.created_at.strftime("%d/%m/%Y")
+            ])
+            
+    output.seek(0)
+    
+    response = StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv"
+    )
+    response.headers["Content-Disposition"] = f"attachment; filename=edital_{demanda_id}_detalhes.csv"
+    return response
+
+
+@router.get("/dashboard/editais", response_model=List[DashboardEditalResponse])
+async def listar_editais_dashboard(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Lista editais para o dashboard com contagem de candidatos"""
+    demandas = db.query(Demanda).order_by(Demanda.created_at.desc()).limit(50).all()
+    
+    result = []
+    for demanda in demandas:
+        # Busca a versão mais recente
+        versao = db.query(VersaoDemanda).filter(
+            VersaoDemanda.demanda_id == demanda.id
+        ).order_by(VersaoDemanda.numero_versao.desc()).first()
+        
+        candidatos_count = 0
+        if versao:
+            candidatos_count = db.query(Proposta).filter(
+                Proposta.versao_demanda_id == versao.id
+            ).count()
+            
+        result.append(DashboardEditalResponse(
+            id=demanda.id,
+            titulo=demanda.titulo,
+            candidatos=candidatos_count,
+            data=demanda.created_at,
+            status=demanda.status
+        ))
+        
+    return result
 
 
 # ===== FUNÇÕES AUXILIARES =====

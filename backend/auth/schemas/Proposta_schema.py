@@ -55,6 +55,7 @@ class PropostaResponse(PropostaBase):
     criada_por_user_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
+    produtor_nome: Optional[str] = None
     itens: List[ItemPropostaResponse] = []
 
     class Config:

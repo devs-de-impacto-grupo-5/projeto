@@ -31,7 +31,9 @@ from models.Conta_model import (
     Escola,
     Governo
 )
+from models.PerfilProdutor_model import PerfilProdutor
 from models.Documentos_model import DocumentoUsuario, DOCUMENTOS_REQUERIDOS
+from models.PerfilProdutor_model import PerfilProdutor
 
 router = APIRouter(tags=["Autenticação"])
 
@@ -64,6 +66,9 @@ async def register(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email já cadastrado"
         )
+
+    total_users = db.query(func.count(User.id)).scalar() or 0
+    is_first_user = total_users == 0
 
     # Valida conforme o tipo de usuário
     if data.tipo_usuario == "produtor":
@@ -164,7 +169,7 @@ async def register(
                 detail="Longitude deve estar entre -180 e 180"
             )
 
-    # Cria o usuário
+    # Cria o usuário (primeiro é admin_master, demais entram como produtores por padrão de role)
     new_user = User(
         name=data.name,
         email=data.email,
@@ -172,7 +177,8 @@ async def register(
         tipo_usuario=data.tipo_usuario,
         subtipo_usuario=data.subtipo_usuario,
         latitude=data.latitude,
-        longitude=data.longitude
+        longitude=data.longitude,
+        role="admin_master" if is_first_user else "produtor"
     )
 
     db.add(new_user)
@@ -180,6 +186,36 @@ async def register(
 
     # Cria a conta específica de acordo com o tipo
     if data.tipo_usuario == "produtor":
+        # Cria o PerfilProdutor para todos os tipos de produtores
+        endereco_json = None
+        if data.latitude is not None and data.longitude is not None:
+            endereco_json = {
+                "geo": {
+                    "latitude": data.latitude,
+                    "longitude": data.longitude
+                }
+            }
+
+        # Adiciona endereÇõo enviado no payload
+        if data.endereco or data.numero or data.cidade or data.uf:
+            endereco_json = endereco_json or {}
+            endereco_json.update({
+                "endereco": data.endereco,
+                "numero": data.numero,
+                "cidade": data.cidade,
+                "uf": data.uf
+            })
+
+        perfil_produtor = PerfilProdutor(
+            user_id=new_user.id,
+            tipo_produtor=data.subtipo_usuario,
+            identificacao_legal=data.cpf if data.subtipo_usuario == "fornecedor_individual" else data.cnpj,
+            endereco_json=endereco_json,
+            status_perfil='incomplete'
+        )
+        db.add(perfil_produtor)
+        db.flush()
+
         if data.subtipo_usuario == "fornecedor_individual":
             conta = FornecedorIndividual(
                 user_id=new_user.id,
@@ -207,6 +243,9 @@ async def register(
                 cnpj=data.cnpj
             )
             db.add(conta)
+
+        # Cria PerfilProdutor se houver dados de endereço
+        # Dados de endereÇõo jÇ­ foram anexados ao perfil_produtor acima
 
     elif data.tipo_usuario == "entidade_executora":
         if data.subtipo_usuario == "escola":
@@ -241,7 +280,8 @@ async def register(
         "tipo_usuario": data.tipo_usuario,
         "subtipo_usuario": data.subtipo_usuario,
         "email": new_user.email,
-        "name": new_user.name
+        "name": new_user.name,
+        "role": new_user.role
     }
 
     # Adiciona localização se fornecida
@@ -287,11 +327,19 @@ async def login_for_access_token(
     # Busca o usuário pelo email
     user = db.query(User).filter(User.email == form_data.username).first()
     
+    # Se não achou por email, tenta por CPF
+    if not user:
+        # Tenta encontrar no FornecedorIndividual
+        fornecedor = db.query(FornecedorIndividual).filter(FornecedorIndividual.cpf == form_data.username).first()
+        
+        if fornecedor:
+            user = db.query(User).filter(User.id == fornecedor.user_id).first()
+    
     # Verifica credenciais
     if not user or not user.verify_password(form_data.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou senha incorretos",
+            detail="Email/CPF ou senha incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
@@ -301,14 +349,18 @@ async def login_for_access_token(
         data={"sub": user.email, "user_id": user.id},
         expires_delta=access_token_expires
     )
-    
+
+    role_out = user.role or user.tipo_usuario
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "user_id": user.id,
-        "role": user.role,
+        "role": role_out,
         "name": user.name,
-        "email": user.email
+        "email": user.email,
+        "tipo_usuario": user.tipo_usuario,
+        "subtipo_usuario": user.subtipo_usuario
     }
 
 @router.get("/usuarios")

@@ -34,7 +34,9 @@ const Home = () => {
           to="/help"
         />
       </ButtonsWrapper>
-      <ChangeAccountType>Sou entidade</ChangeAccountType>
+      <ChangeAccountType onClick={() => { window.location.href = '/admin/login'; }}>
+        Sou entidade
+      </ChangeAccountType>
     </Container>
   );
 };

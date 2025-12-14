@@ -88,7 +88,7 @@ class ItemDemandaResponse(BaseModel):
     user_nome: Optional[str] = Field(None, description="Nome do produtor")
     unidade_id: int
     quantidade: Decimal
-    cronograma_entrega_json: Optional[Dict[str, Any]] = None
+    cronograma_entrega_json: Optional[Any] = None
     preco_maximo: Optional[Decimal] = None
     observacoes: Optional[str] = None
     produto_nome: Optional[str] = None
@@ -112,6 +112,7 @@ class DemandaResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     versao_atual: Optional[int] = None
+    versao_atual_id: Optional[int] = None
     itens: List[ItemDemandaResponse] = []
 
     model_config = {"from_attributes": True}
@@ -139,4 +140,3 @@ class ProdutorCapacidadeResponse(BaseModel):
     percentual_cobertura: float = Field(..., description="Percentual de itens da demanda que o produtor pode suprir")
     total_itens_demanda: int
     itens_supriveis: int
-

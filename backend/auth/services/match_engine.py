@@ -142,8 +142,9 @@ class MatchEngineService:
     def _filtrar_produtores(self, versao: VersaoDemanda) -> List[PerfilProdutor]:
         """Aplica filtros eliminatórios (Passo 2)"""
         # 1. Documentação e Perfil
+        # Permite qualquer produtor que nÃ£o esteja bloqueado.
         query = self.db.query(PerfilProdutor).filter(
-            PerfilProdutor.status_perfil == 'complete' 
+            PerfilProdutor.status_perfil != 'blocked'
             # Idealmente verificar status de docs especificos se necessario
         )
         
@@ -164,7 +165,8 @@ class MatchEngineService:
             # Se _score_proximidade retorna score > 0 (dist < 600km ou similar logic internal to scoring), aceitamos.
             # Mas o RF diz "Região elegível: respeita raio máximo". 
             # Vamos assumir 300km como hard limit para "Filtro".
-            if dist[2].get("distancia_km", 9999) > 300: # Exemplo hardcode seguro
+            dist_km = dist[2].get("distancia_km")
+            if dist_km is not None and dist_km > 300: # Exemplo hardcode seguro
                 continue
 
             # 4. RN-14.2 - Limite de Participação (Max 5 propostas pendentes)

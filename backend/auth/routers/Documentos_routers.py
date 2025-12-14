@@ -1,5 +1,5 @@
 # routers/Documentos_routers.py
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
@@ -15,7 +15,9 @@ from schemas.Documento_schema import (
     EtapaWorkflowUpdate,
     EtapaWorkflowResponse,
     DocumentoChecklistResponse,
-    DocumentoChecklistItem
+    DocumentoChecklistItem,
+    ProjetoVendaChecklist,
+    ChecklistSecao
 )
 from models.Documento_model import (
     TipoDocumento,
@@ -25,8 +27,10 @@ from models.Documento_model import (
     WorkflowDocumento,
     EtapaWorkflow
 )
+from models.Documentos_model import PROJETO_VENDA_MODELOS
 from models.PerfilProdutor_model import PerfilProdutor
 from models.User_model import User
+from models.Documentos_model import DocumentoUsuario, DOCUMENTOS_REQUERIDOS
 from security.security import get_current_user, get_db
 
 router = APIRouter(tags=["Documentos"], prefix="/documentos")
@@ -114,6 +118,75 @@ async def listar_documentos_produtor(
     return [_build_documento_response(doc, db) for doc in documentos]
 
 
+@router.get("/checklist", response_model=DocumentoChecklistResponse)
+async def obter_checklist_documentos_usuario(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Obtém checklist de documentos do usuário autenticado.
+
+    Retorna apenas os documentos com status 'pending' - os que o usuário ainda precisa enviar.
+    Busca na tabela documentos_usuario usando o user_id.
+
+    RF-05: Gestão de documentação (checklist e status)
+    """
+    # Busca todos os documentos do usuário
+    documentos_usuario = db.query(DocumentoUsuario).filter(
+        DocumentoUsuario.user_id == current_user.id
+    ).all()
+
+    if not documentos_usuario:
+        raise HTTPException(status_code=404, detail="Nenhum documento encontrado para este usuário")
+
+    # Constrói mapa de documentos por nome para fácil acesso
+    docs_map = {doc.nome_documento: doc for doc in documentos_usuario}
+
+    # Conta documentos por status
+    itens = []
+    total_pendentes = 0
+    total_enviados = 0
+    total_aprovados = 0
+    total_rejeitados = 0
+
+    # Itera pelos documentos do usuário
+    for documento in documentos_usuario:
+        # Contadores
+        if documento.status == 'pending':
+            total_pendentes += 1
+        elif documento.status == 'enviado':
+            total_enviados += 1
+        elif documento.status == 'aprovado':
+            total_aprovados += 1
+        elif documento.status == 'rejeitado':
+            total_rejeitados += 1
+
+        # Adiciona apenas documentos com status 'pending'
+        if documento.status == 'pending':
+            itens.append(DocumentoChecklistItem(
+                tipo_documento_id=documento.id,
+                tipo_documento_codigo=documento.nome_documento,
+                tipo_documento_nome=documento.nome_documento,
+                obrigatorio=True,
+                status=documento.status,
+                documento_id=documento.id,
+                expires_at=None
+            ))
+
+    perfil_completo = total_pendentes == 0 and total_rejeitados == 0
+
+    return DocumentoChecklistResponse(
+        produtor_id=current_user.id,  # Usando user_id como produtor_id
+        total_documentos=len(documentos_usuario),
+        documentos_pendentes=total_pendentes,
+        documentos_aprovados=total_aprovados,
+        documentos_em_analise=total_enviados,  # 'enviado' é equivalente a 'in_review'
+        documentos_reprovados=total_rejeitados,
+        perfil_completo=perfil_completo,
+        itens=itens
+    )
+
+
 @router.get("/produtor/{produtor_id}/checklist", response_model=DocumentoChecklistResponse)
 async def obter_checklist_documentos(
     produtor_id: int,
@@ -121,25 +194,34 @@ async def obter_checklist_documentos(
     db: Session = Depends(get_db)
 ):
     """
-    Obtém checklist completo de documentos do produtor.
+    Obtém checklist de documentos pendentes do produtor.
     RF-05: Gestão de documentação (checklist e status)
     """
+    # Tenta buscar por PerfilProdutor.id primeiro
     produtor = db.query(PerfilProdutor).filter(PerfilProdutor.id == produtor_id).first()
+
+    # Se não encontrar, tenta buscar por user_id
+    if not produtor:
+        produtor = db.query(PerfilProdutor).filter(PerfilProdutor.user_id == produtor_id).first()
+
     if not produtor:
         raise HTTPException(status_code=404, detail="Produtor não encontrado")
+
+    # Usa o id correto do PerfilProdutor para as queries seguintes
+    perfil_produtor_id = produtor.id
 
     # Busca todos os tipos de documentos
     tipos_docs = db.query(TipoDocumento).all()
 
     # Busca documentos existentes do produtor
     documentos_existentes = db.query(DocumentoProdutor).filter(
-        DocumentoProdutor.produtor_id == produtor_id
+        DocumentoProdutor.produtor_id == perfil_produtor_id
     ).all()
 
     # Cria mapa de documentos por tipo
     docs_map = {doc.tipo_documento_id: doc for doc in documentos_existentes}
 
-    # Constrói checklist
+    # Constrói checklist com apenas documentos pendentes
     itens = []
     total_pendentes = 0
     total_aprovados = 0
@@ -168,20 +250,22 @@ async def obter_checklist_documentos(
         elif status_doc == 'rejected':
             total_reprovados += 1
 
-        itens.append(DocumentoChecklistItem(
-            tipo_documento_id=tipo_doc.id,
-            tipo_documento_codigo=tipo_doc.codigo,
-            tipo_documento_nome=tipo_doc.nome,
-            obrigatorio=True,  # TODO: Verificar regra de obrigatoriedade
-            status=status_doc,
-            documento_id=documento_id,
-            expires_at=expires_at
-        ))
+        # Adiciona apenas documentos com status 'pending'
+        if status_doc == 'pending':
+            itens.append(DocumentoChecklistItem(
+                tipo_documento_id=tipo_doc.id,
+                tipo_documento_codigo=tipo_doc.codigo,
+                tipo_documento_nome=tipo_doc.nome,
+                obrigatorio=True,  # TODO: Verificar regra de obrigatoriedade
+                status=status_doc,
+                documento_id=documento_id,
+                expires_at=expires_at
+            ))
 
     perfil_completo = total_pendentes == 0 and total_reprovados == 0
 
     return DocumentoChecklistResponse(
-        produtor_id=produtor_id,
+        produtor_id=perfil_produtor_id,
         total_documentos=len(tipos_docs),
         documentos_pendentes=total_pendentes,
         documentos_aprovados=total_aprovados,
@@ -190,6 +274,31 @@ async def obter_checklist_documentos(
         perfil_completo=perfil_completo,
         itens=itens
     )
+
+
+@router.get("/projeto-venda/checklist", response_model=List[ProjetoVendaChecklist])
+async def listar_modelos_projeto_venda(
+    subtipo: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna o checklist estruturado do Projeto de Venda para cada subtipo de produtor.
+    Se um subtipo for informado, retorna apenas o checklist correspondente.
+    """
+    if subtipo:
+        modelo_especifico = PROJETO_VENDA_MODELOS.get(subtipo)
+        if not modelo_especifico:
+            raise HTTPException(
+                status_code=404,
+                detail="Modelo de projeto nao encontrado para o subtipo informado"
+            )
+        return [_build_projeto_venda_checklist(subtipo, modelo_especifico)]
+
+    return [
+        _build_projeto_venda_checklist(key, value)
+        for key, value in PROJETO_VENDA_MODELOS.items()
+    ]
 
 
 @router.patch("/{documento_id}", response_model=DocumentoProdutorResponse)
@@ -273,6 +382,106 @@ async def upload_arquivo_documento(
     db.commit()
 
     return {"message": "Arquivo enviado com sucesso", "arquivo_id": arquivo.id, "versao": arquivo_doc.versao}
+
+
+@router.post("/upload-by-name", status_code=status.HTTP_201_CREATED)
+async def upload_documento_por_nome(
+    nome_documento: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
+    valor: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Registra/atualiza um documento identificando pelo nome.
+
+    O endpoint recebe o nome do documento e pode receber:
+    - Um arquivo PDF (para upload de documento), OU
+    - Um valor textual (ex: número de CPF, CNPJ)
+
+    RF-05: Upload/Registro de documento por nome
+
+    Parâmetros (form-data):
+    - nome_documento: Nome do documento (string, OBRIGATÓRIO)
+    - file: Arquivo PDF (opcional) - apenas se enviando arquivo
+    - valor: Valor textual (opcional) - ex: "123.456.789-00" para CPF
+
+    Validação:
+    - nome_documento é obrigatório
+    - Pelo menos um de 'file' ou 'valor' deve ser fornecido
+    - Se file for enviado, deve ser PDF
+    - Se file for enviado, valor será ignorado
+
+    Armazenamento:
+    - Se file: Arquivo é armazenado no caminho_arquivo
+    - Se valor: Armazenado no campo observacoes
+
+    Exemplos de uso:
+    - Com valor: curl -F 'nome_documento=CPF' -F 'valor=123.456.789-00'
+    - Com arquivo: curl -F 'nome_documento=DAP' -F 'file=@documento.pdf'
+    """
+    # Valida nome_documento
+    if not nome_documento:
+        raise HTTPException(
+            status_code=400,
+            detail="O parâmetro 'nome_documento' é obrigatório"
+        )
+
+    # Valida que pelo menos um campo foi fornecido
+    if not file and not valor:
+        raise HTTPException(
+            status_code=400,
+            detail="Pelo menos um de 'file' ou 'valor' deve ser fornecido"
+        )
+
+    # Valida tipo de arquivo se fornecido
+    if file and file.content_type not in ['application/pdf', 'application/x-pdf']:
+        raise HTTPException(status_code=400, detail="Apenas arquivos PDF são permitidos")
+
+    # Busca ou cria DocumentoUsuario
+    documento = db.query(DocumentoUsuario).filter(
+        DocumentoUsuario.user_id == current_user.id,
+        DocumentoUsuario.nome_documento == nome_documento
+    ).first()
+
+    if not documento:
+        # Cria novo DocumentoUsuario se não existir
+        documento = DocumentoUsuario(
+            user_id=current_user.id,
+            nome_documento=nome_documento,
+            status='pending'
+        )
+        db.add(documento)
+        db.flush()
+
+    # Processa upload de arquivo se fornecido
+    if file:
+        # Atualiza caminho do arquivo
+        documento.caminho_arquivo = f"/storage/documentos/{current_user.id}/{nome_documento}/{file.filename}"
+        documento.data_envio = datetime.utcnow()
+
+        # TODO: Implementar upload real do arquivo para storage
+        # Por enquanto, apenas registra o caminho
+
+    # Processa valor textual se fornecido (e nenhum arquivo foi enviado)
+    elif valor:
+        documento.observacoes = f"Valor informado: {valor}"
+        documento.data_envio = datetime.utcnow()
+
+    # Atualiza status para 'enviado'
+    documento.status = 'enviado'
+
+    db.commit()
+    db.refresh(documento)
+
+    return {
+        "message": "Documento registrado com sucesso",
+        "documento_id": documento.id,
+        "nome_documento": nome_documento,
+        "status": "enviado",
+        "tipo_envio": "arquivo" if file else "valor textual",
+        "valor_armazenado": valor if valor else file.filename if file else None
+    }
 
 
 # ===== WORKFLOW DE EMISSÃO ASSISTIDA (RF-06) =====
@@ -391,6 +600,18 @@ async def atualizar_etapa_workflow(
 
 
 # ===== FUNÇÕES AUXILIARES =====
+
+def _build_projeto_venda_checklist(subtipo: str, modelo: dict) -> ProjetoVendaChecklist:
+    """Monta o checklist do projeto de venda a partir do dicionário base"""
+    secoes = [
+        ChecklistSecao(titulo=secao["titulo"], itens=secao["itens"])
+        for secao in modelo.get("secoes", [])
+    ]
+    return ProjetoVendaChecklist(
+        subtipo=subtipo,
+        titulo=modelo.get("titulo", ""),
+        secoes=secoes
+    )
 
 def _build_documento_response(documento: DocumentoProdutor, db: Session) -> DocumentoProdutorResponse:
     """Constrói resposta de documento com informações do tipo"""

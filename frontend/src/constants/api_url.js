@@ -1,0 +1,1 @@
+export const API_URL = "https://rj-devs-impacto-api.onrender.com/";
