@@ -329,7 +329,9 @@ async def login_for_access_token(
         "user_id": user.id,
         "role": user.role,
         "name": user.name,
-        "email": user.email
+        "email": user.email,
+        "tipo_usuario": user.tipo_usuario,
+        "subtipo_usuario": user.subtipo_usuario
     }
 
 @router.get("/usuarios")

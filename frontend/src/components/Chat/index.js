@@ -3,9 +3,22 @@ import AssistenteMessage from '../AssistenteMessage';
 import ProdutorMessage from '../ProdutorMessage';
 import ChatHeader from '../ChatHeader';
 import ChatInput from '../ChatInput';
+import ChatOptions from '../ChatOptions';
+import FileUpload from '../FileUpload';
 import { Container, MessagesContainer } from './style';
 
-const Chat = ({ onBack, onHelp, initialMessages, onSend, inputType, placeholder }) => {
+const Chat = ({
+  onBack,
+  onHelp,
+  initialMessages,
+  onSend,
+  inputType,
+  placeholder,
+  onOptionSelect,
+  showInput = true,
+  showFileUpload = false,
+  onFileUpload
+}) => {
   const [messages, setMessages] = useState(initialMessages || []);
 
   const handleSend = (message) => {
@@ -19,6 +32,18 @@ const Chat = ({ onBack, onHelp, initialMessages, onSend, inputType, placeholder 
     }
   };
 
+  const handleOptionSelect = (value) => {
+    if (onOptionSelect) {
+      onOptionSelect(value, setMessages);
+    }
+  };
+
+  const handleFileUpload = (file) => {
+    if (onFileUpload) {
+      onFileUpload(file, setMessages);
+    }
+  };
+
   return (
     <Container>
       <ChatHeader onBack={onBack} onHelp={onHelp} />
@@ -26,16 +51,21 @@ const Chat = ({ onBack, onHelp, initialMessages, onSend, inputType, placeholder 
         {messages.map((msg, index) => (
           msg.type === 'assistente' ? (
             <AssistenteMessage key={index}>{msg.text}</AssistenteMessage>
+          ) : msg.type === 'options' ? (
+            <ChatOptions key={index} options={msg.options} onSelect={handleOptionSelect} />
           ) : (
             <ProdutorMessage key={index}>{msg.text}</ProdutorMessage>
           )
         ))}
       </MessagesContainer>
-      <ChatInput
-        type={inputType}
-        placeholder={placeholder}
-        onSend={handleSend}
-      />
+      {showFileUpload && <FileUpload onFileSelect={handleFileUpload} />}
+      {showInput && !showFileUpload && (
+        <ChatInput
+          type={inputType}
+          placeholder={placeholder}
+          onSend={handleSend}
+        />
+      )}
     </Container>
   );
 };

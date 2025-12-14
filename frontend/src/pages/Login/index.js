@@ -140,6 +140,9 @@ const Login = () => {
               localStorage.setItem('user_id', loginData.user_id);
               localStorage.setItem('user_name', loginData.name);
               localStorage.setItem('user_email', loginData.email);
+              // Se vier do backend, usa. Senão usa do userData (caso do cadastro)
+              localStorage.setItem('tipo_usuario', loginData.tipo_usuario || 'produtor');
+              localStorage.setItem('subtipo_usuario', loginData.subtipo_usuario || userData.subtipo_usuario);
 
               setMessages(prev => [...prev, {
                 type: 'assistente',
@@ -236,6 +239,8 @@ const Login = () => {
         localStorage.setItem('user_id', data.user_id);
         localStorage.setItem('user_name', data.name);
         localStorage.setItem('user_email', data.email);
+        localStorage.setItem('tipo_usuario', data.tipo_usuario || '');
+        localStorage.setItem('subtipo_usuario', data.subtipo_usuario || '');
 
         setMessages(prev => [...prev, {
           type: 'assistente',

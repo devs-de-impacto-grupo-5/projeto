@@ -34,6 +34,9 @@ export const MessageText = styled.p`
   font-weight: 400;
   margin: 0;
   line-height: 1.5;
+  white-space: pre-line;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 `;
 
 export const TypingIndicator = styled.div`
