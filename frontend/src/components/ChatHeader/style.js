@@ -5,9 +5,14 @@ export const Container = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
-  background-color: ${neutral};
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid #edf0f3;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 `;
 
 export const BackButton = styled.button`

@@ -15,7 +15,9 @@ from schemas.Documento_schema import (
     EtapaWorkflowUpdate,
     EtapaWorkflowResponse,
     DocumentoChecklistResponse,
-    DocumentoChecklistItem
+    DocumentoChecklistItem,
+    ProjetoVendaChecklist,
+    ChecklistSecao
 )
 from models.Documento_model import (
     TipoDocumento,
@@ -25,6 +27,7 @@ from models.Documento_model import (
     WorkflowDocumento,
     EtapaWorkflow
 )
+from models.Documentos_model import PROJETO_VENDA_MODELOS
 from models.PerfilProdutor_model import PerfilProdutor
 from models.User_model import User
 from models.Documentos_model import DocumentoUsuario, DOCUMENTOS_REQUERIDOS
@@ -193,19 +196,26 @@ async def obter_checklist_documentos(
     """
     Obtém checklist de documentos pendentes do produtor.
     RF-05: Gestão de documentação (checklist e status)
-
-    Retorna apenas os documentos com status 'pending' - os que o produtor ainda precisa enviar.
     """
+    # Tenta buscar por PerfilProdutor.id primeiro
     produtor = db.query(PerfilProdutor).filter(PerfilProdutor.id == produtor_id).first()
+
+    # Se não encontrar, tenta buscar por user_id
+    if not produtor:
+        produtor = db.query(PerfilProdutor).filter(PerfilProdutor.user_id == produtor_id).first()
+
     if not produtor:
         raise HTTPException(status_code=404, detail="Produtor não encontrado")
+
+    # Usa o id correto do PerfilProdutor para as queries seguintes
+    perfil_produtor_id = produtor.id
 
     # Busca todos os tipos de documentos
     tipos_docs = db.query(TipoDocumento).all()
 
     # Busca documentos existentes do produtor
     documentos_existentes = db.query(DocumentoProdutor).filter(
-        DocumentoProdutor.produtor_id == produtor_id
+        DocumentoProdutor.produtor_id == perfil_produtor_id
     ).all()
 
     # Cria mapa de documentos por tipo
@@ -255,7 +265,7 @@ async def obter_checklist_documentos(
     perfil_completo = total_pendentes == 0 and total_reprovados == 0
 
     return DocumentoChecklistResponse(
-        produtor_id=produtor_id,
+        produtor_id=perfil_produtor_id,
         total_documentos=len(tipos_docs),
         documentos_pendentes=total_pendentes,
         documentos_aprovados=total_aprovados,
@@ -264,6 +274,31 @@ async def obter_checklist_documentos(
         perfil_completo=perfil_completo,
         itens=itens
     )
+
+
+@router.get("/projeto-venda/checklist", response_model=List[ProjetoVendaChecklist])
+async def listar_modelos_projeto_venda(
+    subtipo: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna o checklist estruturado do Projeto de Venda para cada subtipo de produtor.
+    Se um subtipo for informado, retorna apenas o checklist correspondente.
+    """
+    if subtipo:
+        modelo_especifico = PROJETO_VENDA_MODELOS.get(subtipo)
+        if not modelo_especifico:
+            raise HTTPException(
+                status_code=404,
+                detail="Modelo de projeto nao encontrado para o subtipo informado"
+            )
+        return [_build_projeto_venda_checklist(subtipo, modelo_especifico)]
+
+    return [
+        _build_projeto_venda_checklist(key, value)
+        for key, value in PROJETO_VENDA_MODELOS.items()
+    ]
 
 
 @router.patch("/{documento_id}", response_model=DocumentoProdutorResponse)
@@ -565,6 +600,18 @@ async def atualizar_etapa_workflow(
 
 
 # ===== FUNÇÕES AUXILIARES =====
+
+def _build_projeto_venda_checklist(subtipo: str, modelo: dict) -> ProjetoVendaChecklist:
+    """Monta o checklist do projeto de venda a partir do dicionário base"""
+    secoes = [
+        ChecklistSecao(titulo=secao["titulo"], itens=secao["itens"])
+        for secao in modelo.get("secoes", [])
+    ]
+    return ProjetoVendaChecklist(
+        subtipo=subtipo,
+        titulo=modelo.get("titulo", ""),
+        secoes=secoes
+    )
 
 def _build_documento_response(documento: DocumentoProdutor, db: Session) -> DocumentoProdutorResponse:
     """Constrói resposta de documento com informações do tipo"""

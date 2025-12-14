@@ -50,6 +50,17 @@ class ItemProducaoCreate(ItemProducaoBase):
     produtor_id: int
 
 
+class ItemProducaoManualCreate(BaseModel):
+    produtor_id: int
+    produto_nome: str
+    unidade_nome: str
+    quantidade: Decimal
+    safra: str
+    preco_base: Optional[Decimal] = None
+    observacoes: Optional[str] = None
+    ativo: bool = True
+
+
 class ItemProducaoUpdate(BaseModel):
     preco_base: Optional[Decimal] = None
     ativo: Optional[bool] = None
@@ -88,6 +99,8 @@ class ItemProducaoResponse(ItemProducaoBase):
     produtor_id: int
     produto_nome: Optional[str] = None
     unidade_nome: Optional[str] = None
+    quantidade: Optional[Decimal] = None
+    safra: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     periodos_capacidade: List[PeriodoCapacidadeResponse] = []

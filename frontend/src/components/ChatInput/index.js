@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FiSend } from 'react-icons/fi';
 import { Container, Input, SendButton } from './style';
 
-const ChatInput = ({ placeholder = 'Digite sua mensagem aqui', onSend }) => {
+const ChatInput = ({ placeholder = 'Digite aqui', type = 'text', onSend }) => {
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e) => {
@@ -16,7 +16,7 @@ const ChatInput = ({ placeholder = 'Digite sua mensagem aqui', onSend }) => {
   return (
     <Container onSubmit={handleSubmit}>
       <Input
-        type="text"
+        type={type}
         placeholder={placeholder}
         value={message}
         onChange={(e) => setMessage(e.target.value)}

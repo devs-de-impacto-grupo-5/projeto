@@ -62,6 +62,7 @@ class UsuarioAdminBase(BaseModel):
     tipo_usuario: str
     subtipo_usuario: str
     status: str
+    role: Optional[str] = None
 
 
 class UsuarioAdminUpdate(BaseModel):
@@ -110,3 +111,15 @@ class RelatorioSistemaResponse(BaseModel):
     demandas_publicadas_ultimos_30_dias: int
     propostas_criadas_ultimos_30_dias: int
     contratos_assinados_ultimos_30_dias: int
+
+
+class DashboardEditalResponse(BaseModel):
+    """Resumo de edital para o dashboard"""
+    id: int
+    titulo: str
+    candidatos: int
+    data: datetime
+    status: str
+
+    class Config:
+        from_attributes = True

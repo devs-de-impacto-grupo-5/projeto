@@ -46,17 +46,20 @@ async def criar_demanda(
             CatalogoProduto.id == item.produto_id
         ).first()
         if not produto:
+            # Debug info
+            existing_ids = [p.id for p in db.query(CatalogoProduto.id).all()]
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Produto com ID {item.produto_id} não encontrado no catálogo"
+                detail=f"Produto com ID {item.produto_id} não encontrado no catálogo. IDs disponíveis: {existing_ids}"
             )
         
         # Valida unidade
         unidade = db.query(Unidade).filter(Unidade.id == item.unidade_id).first()
         if not unidade:
+            existing_ids = [u.id for u in db.query(Unidade.id).all()]
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Unidade com ID {item.unidade_id} não encontrada"
+                detail=f"Unidade com ID {item.unidade_id} não encontrada. IDs disponíveis: {existing_ids}"
             )
         
         # Valida que o user_id é de um produtor (cache para evitar consultas repetidas)
@@ -142,14 +145,14 @@ async def criar_demanda(
             id=item.id,
             produto_id=item.produto_id,
             user_id=item.user_id,
-            user_nome=produtor_user.name if produtor_user else None,
+            user_nome=produtor_user.name if produtor_user else "Usuário não encontrado",
             unidade_id=item.unidade_id,
             quantidade=item.quantidade,
             cronograma_entrega_json=item.cronograma_entrega_json,
             preco_maximo=item.preco_maximo,
             observacoes=item.observacoes,
-            produto_nome=produto.nome if produto else None,
-            unidade_nome=unidade.nome if unidade else None
+            produto_nome=produto.nome if produto else "Produto não encontrado",
+            unidade_nome=unidade.nome if unidade else "Unidade não encontrada"
         ))
     
     return DemandaResponse(
@@ -173,7 +176,6 @@ async def criar_demanda(
 @router.get("/{demanda_id}", response_model=DemandaResponse)
 async def obter_demanda(
     demanda_id: int,
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -209,14 +211,14 @@ async def obter_demanda(
                 id=item.id,
                 produto_id=item.produto_id,
                 user_id=item.user_id,
-                user_nome=produtor_user.name if produtor_user else None,
+                user_nome=produtor_user.name if produtor_user else "Usuário não encontrado",
                 unidade_id=item.unidade_id,
                 quantidade=item.quantidade,
                 cronograma_entrega_json=item.cronograma_entrega_json,
                 preco_maximo=item.preco_maximo,
                 observacoes=item.observacoes,
-                produto_nome=produto.nome if produto else None,
-                unidade_nome=unidade.nome if unidade else None
+                produto_nome=produto.nome if produto else "Produto não encontrado",
+                unidade_nome=unidade.nome if unidade else "Unidade não encontrada"
             ))
     
     return DemandaResponse(
@@ -233,6 +235,7 @@ async def obter_demanda(
         created_at=demanda.created_at,
         updated_at=demanda.updated_at,
         versao_atual=versao.numero_versao if versao else None,
+        versao_atual_id=versao.id if versao else None,
         itens=itens_response
     )
 
@@ -241,7 +244,6 @@ async def obter_demanda(
 async def listar_demandas(
     user_id: int = None,
     status: str = None,
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -280,14 +282,14 @@ async def listar_demandas(
                     id=item.id,
                     produto_id=item.produto_id,
                     user_id=item.user_id,
-                    user_nome=produtor_user.name if produtor_user else None,
+                    user_nome=produtor_user.name if produtor_user else "Usuário não encontrado",
                     unidade_id=item.unidade_id,
                     quantidade=item.quantidade,
                     cronograma_entrega_json=item.cronograma_entrega_json,
                     preco_maximo=item.preco_maximo,
                     observacoes=item.observacoes,
-                    produto_nome=produto.nome if produto else None,
-                    unidade_nome=unidade.nome if unidade else None
+                    produto_nome=produto.nome if produto else "Produto não encontrado",
+                    unidade_nome=unidade.nome if unidade else "Unidade não encontrada"
                 ))
         
         result.append(DemandaResponse(
@@ -477,4 +479,3 @@ async def diagnostico_catalogo(db: Session = Depends(get_db)):
             for u in unidades
         ]
     }
-

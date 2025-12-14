@@ -10,8 +10,8 @@ export const Container = styled(Link)`
   background-color: white;
   border-radius: 16px;
   padding: 16px 16px;
-  width: 80%;
-  max-width: 360px;
+  width: 100%;
+  max-width: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.2s;

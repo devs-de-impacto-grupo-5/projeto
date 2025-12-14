@@ -6,6 +6,11 @@ export const PageContainer = styled.div`
   flex-direction: column;
   height: 100vh;
   background-color: ${neutral};
+
+  @media (min-width: 768px) {
+    height: auto;
+    min-height: 100vh;
+  }
 `;
 
 export const Container = styled.div`
@@ -15,6 +20,12 @@ export const Container = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
+
+  @media (min-width: 768px) {
+    width: 60%;
+    margin: 0 auto;
+    overflow-y: visible;
+  }
 `;
 
 export const Title = styled.h1`

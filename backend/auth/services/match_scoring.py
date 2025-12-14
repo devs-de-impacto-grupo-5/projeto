@@ -175,7 +175,8 @@ class MatchScoringService:
             fallback = 0.4 if itens_produtor else 0.0
             return fallback, False, {
                 "quantidade_demandada": round(demanda_total, 2),
-                "quantidade_coberta": 0.0,
+                # Sem capacidade declarada, assume cobrir a demanda para fins de match inicial
+                "quantidade_coberta": round(demanda_total, 2),
             }
 
         cobertura = 0.0
