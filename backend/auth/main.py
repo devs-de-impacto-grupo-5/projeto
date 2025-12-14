@@ -4,6 +4,7 @@ from fastapi.openapi.utils import get_openapi
 import uvicorn
 from routers import Login_routers
 from routers import Produtos_routers
+from routers.Demanda_routers import router as Demanda_routers
 from fastapi.security import HTTPBearer
 from db.db import create_tables
 from contextlib import asynccontextmanager
@@ -71,6 +72,7 @@ app.add_middleware(
 
 app.include_router(Login_routers)
 app.include_router(Produtos_routers)
+app.include_router(Demanda_routers)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8084, log_level="info")

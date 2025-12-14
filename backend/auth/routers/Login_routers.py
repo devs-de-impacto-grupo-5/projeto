@@ -11,7 +11,9 @@ from schemas.Register_schema import (
     RegisterEscola,
     RegisterGoverno
 )
+from schemas.Validacao_schema import ValidacaoCPFCNPJRequest, ValidacaoCPFCNPJResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func, or_
 from fastapi.security import OAuth2PasswordRequestForm
 from security.security import (
     create_access_token,
@@ -389,3 +391,73 @@ async def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
         "email": user.email,
         "role": user.role
     }
+
+
+@router.post("/validar-usuario", response_model=ValidacaoCPFCNPJResponse)
+async def validar_documento(
+    request: ValidacaoCPFCNPJRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Valida se um CPF ou CNPJ já está cadastrado no sistema.
+    
+    Verifica em:
+    - Fornecedores individuais (CPF)
+    - Grupos informais (CPF nos participantes)
+    - Grupos formais (CNPJ)
+    
+    Retorna True se já está cadastrado, False caso contrário.
+    """
+    documento = request.documento.strip()
+    
+    # Detecta se é CPF ou CNPJ baseado no formato
+    # CPF: XXX.XXX.XXX-XX (14 caracteres)
+    # CNPJ: XX.XXX.XXX/XXXX-XX (18 caracteres)
+    is_cpf = len(documento) == 14 and documento.count('.') == 2 and documento.count('-') == 1
+    is_cnpj = len(documento) == 18 and documento.count('.') == 2 and documento.count('/') == 1 and documento.count('-') == 1
+    
+    if not is_cpf and not is_cnpj:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato inválido. Use CPF (XXX.XXX.XXX-XX) ou CNPJ (XX.XXX.XXX/XXXX-XX)"
+        )
+    
+    ja_cadastrado = False
+    
+    if is_cpf:
+        # Verifica em fornecedores individuais
+        fornecedor = db.query(FornecedorIndividual).filter(
+            FornecedorIndividual.cpf == documento
+        ).first()
+        
+        if fornecedor:
+            ja_cadastrado = True
+        else:
+            # Verifica em grupos informais (dentro do JSON de participantes)
+            # Busca grupos informais onde o JSON contém o CPF
+            grupos_informais = db.query(GrupoInformal).all()
+            for grupo in grupos_informais:
+                if grupo.participantes:
+                    # participantes é uma lista de dicts: [{"nome": "...", "cpf": "..."}, ...]
+                    if isinstance(grupo.participantes, list):
+                        for participante in grupo.participantes:
+                            if isinstance(participante, dict) and participante.get("cpf") == documento:
+                                ja_cadastrado = True
+                                break
+                    if ja_cadastrado:
+                        break
+    
+    elif is_cnpj:
+        # Verifica em grupos formais
+        grupo_formal = db.query(GrupoFormal).filter(
+            GrupoFormal.cnpj == documento
+        ).first()
+        
+        if grupo_formal:
+            ja_cadastrado = True
+    
+    return ValidacaoCPFCNPJResponse(
+        ja_cadastrado=ja_cadastrado,
+        documento=documento,
+        tipo="cpf" if is_cpf else "cnpj"
+    )

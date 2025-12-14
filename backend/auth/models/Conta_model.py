@@ -41,7 +41,6 @@ class Produto(Base):
     nome = mapped_column(String(255), nullable=False)
     descricao = mapped_column(Text, nullable=True)
     categoria = mapped_column(String(100), nullable=False)
-    quantidade = mapped_column(Integer, nullable=False)
     preco = mapped_column(Float, nullable=False)
     created_at = mapped_column(TIMESTAMP, server_default='NOW()')
     updated_at = mapped_column(TIMESTAMP, server_default='NOW()', onupdate='NOW()')

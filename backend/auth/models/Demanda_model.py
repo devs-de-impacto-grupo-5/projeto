@@ -9,9 +9,10 @@ class Demanda(Base):
     __tablename__ = "demandas"
 
     id = mapped_column(Integer, primary_key=True)
-    organizacao_id = mapped_column(Integer, ForeignKey("organizacoes.id"), nullable=False)
+    organizacao_id = mapped_column(Integer, ForeignKey("organizacoes.id"), nullable=True)  # Opcional, pode ser None
     titulo = mapped_column(String(500), nullable=False)
     descricao = mapped_column(Text, nullable=True)
+    quantidade = mapped_column(Integer, nullable=True)  # Quantidade total da demanda
     status = mapped_column(String(50), default='draft', nullable=False)  # draft|published|receiving_proposals|closed|cancelled|contracted
     publicada_em = mapped_column(TIMESTAMP, nullable=True)
     encerra_em = mapped_column(TIMESTAMP, nullable=True)

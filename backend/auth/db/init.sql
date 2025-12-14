@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS users (
     subtipo_usuario VARCHAR(50) NOT NULL,
     latitude FLOAT,
     longitude FLOAT,
+    status VARCHAR(50) DEFAULT 'active' NOT NULL,
+    phone VARCHAR(20),
+    last_login_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -74,7 +77,6 @@ CREATE TABLE IF NOT EXISTS produtos (
     nome VARCHAR(255) NOT NULL,
     descricao TEXT,
     categoria VARCHAR(100) NOT NULL,
-    quantidade INTEGER NOT NULL,
     preco FLOAT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -264,14 +266,15 @@ CREATE TABLE IF NOT EXISTS periodos_capacidade (
 -- Demandas/Editais
 CREATE TABLE IF NOT EXISTS demandas (
     id SERIAL PRIMARY KEY,
-    organizacao_id INTEGER NOT NULL REFERENCES organizacoes(id),
+    organizacao_id INTEGER REFERENCES organizacoes(id),  -- Opcional, pode ser NULL
     titulo VARCHAR(500) NOT NULL,
     descricao TEXT,
+    quantidade INTEGER,  -- Quantidade total da demanda
     status VARCHAR(50) DEFAULT 'draft',
     publicada_em TIMESTAMP,
     encerra_em TIMESTAMP,
     local_entrega_json JSONB,
-    criada_por_user_id INTEGER NOT NULL REFERENCES users(id),
+    criada_por_user_id INTEGER NOT NULL REFERENCES users(id),  -- ID do usuário entidade_executora
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

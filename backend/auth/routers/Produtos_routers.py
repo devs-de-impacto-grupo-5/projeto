@@ -29,7 +29,6 @@ async def criar_produto(
         nome=produto_data.nome,
         descricao=produto_data.descricao,
         categoria=produto_data.categoria,
-        quantidade=produto_data.quantidade,
         preco=produto_data.preco
     )
 
@@ -112,8 +111,6 @@ async def atualizar_produto(
         produto.descricao = produto_data.descricao
     if produto_data.categoria is not None:
         produto.categoria = produto_data.categoria
-    if produto_data.quantidade is not None:
-        produto.quantidade = produto_data.quantidade
     if produto_data.preco is not None:
         produto.preco = produto_data.preco
 

@@ -12,7 +12,7 @@ class User(Base):
     id = mapped_column(Integer, primary_key=True)
     name = mapped_column(String(255), nullable=False)
     email = mapped_column(String(255), unique=True, nullable=False)
-    senha = mapped_column(String(255), nullable=False)
+    senha = mapped_column(String(255), name="hash_senha", nullable=False)
 
     # Tipo de usuário: "entidade_executora" ou "produtor"
     tipo_usuario = mapped_column(String(50), nullable=False)
