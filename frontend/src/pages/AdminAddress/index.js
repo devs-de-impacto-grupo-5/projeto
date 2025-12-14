@@ -76,7 +76,7 @@ const RegisterAddress = () => {
       };
 
       // FastAPI is mounted with root_path "/api/auth"
-      const response = await fetch('http://localhost:8084/api/auth/register', {
+      const response = await fetch('https://rj-devs-impacto-api.onrender.com/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

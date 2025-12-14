@@ -1,1 +1,1 @@
-export const API_URL = "http://localhost:8084/api/auth/";
+export const API_URL = "https://rj-devs-impacto-api.onrender.com/";
